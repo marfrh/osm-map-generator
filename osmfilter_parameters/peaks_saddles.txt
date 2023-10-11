@@ -1,0 +1,9 @@
+--keep-nodes=
+natural=peak =volcano =saddle =notch =col
+mountain_pass=yes
+
+--drop-ways
+
+--drop-relations
+
+--ignore-dependencies

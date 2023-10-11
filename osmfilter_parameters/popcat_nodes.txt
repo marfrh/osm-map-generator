@@ -1,0 +1,6 @@
+--keep-nodes=
+place=
+
+--keep-ways=
+
+--keep-relations=

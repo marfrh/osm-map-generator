@@ -1,0 +1,17 @@
+--keep=
+( natural=water =reservoir =basin
+or landuse=water =reservoir =basin
+or natural=wood =forest
+or landuse=wood =forest
+or boundary=national_park =protected_area =nature_reserve =aboriginal_lands
+or leisure=nature_reserve =national_park
+or natural=mountain_range =mountain_area
+or region:type=mountain_range =mountain_area
+or natural=glacier =desert =heath =marsh =wetland
+or aeroway=aerodrome
+or place=island =islet =archipelago =sea =ocean =peninsula
+or natural=island =islet =archipelago =sea =ocean =peninsula
+or natural=bay =cape =canyon =fjord =crater =valley
+or place=bay =cape =canyon =fjord =crater =valley
+or landuse=orchard )
+and name=

@@ -1,0 +1,6 @@
+--keep=
+
+--keep-relations=
+building=*
+and addr:housenumber=*
+and type=multipolygon

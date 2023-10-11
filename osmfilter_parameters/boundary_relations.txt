@@ -1,0 +1,9 @@
+--keep-relations=
+boundary=administrative
+and type=boundary
+
+--drop-nodes
+
+--drop-ways
+
+--ignore-dependencies

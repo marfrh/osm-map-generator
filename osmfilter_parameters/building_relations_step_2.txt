@@ -1,0 +1,4 @@
+--keep-nodes=
+building=*
+and addr:housenumber=*
+and type=multipolygon
