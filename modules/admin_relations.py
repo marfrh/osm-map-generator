@@ -3,15 +3,6 @@ import osmium
 import time
 
 
-# Add all member ways of relation r to dict all_ways with r's admin level
-def add_members(r, all_ways, admin_level):
-    for m in r.members:
-        if m.type == "w":
-            if m.ref not in all_ways:
-                all_ways[m.ref] = []
-            all_ways[m.ref].append(admin_level)
-
-
 # Collect data for all admin relations with admin_level 1-4. other admin_level
 # relations will be deleted.
 class collect_admin_relation_ways(osmium.SimpleHandler):
@@ -36,7 +27,15 @@ class collect_admin_relation_ways(osmium.SimpleHandler):
         # only add admin levels 1-4 to all_ways, other admin levels should not
         # be resolved
         if int(admin_level) in [1, 2, 3, 4]:
-            add_members(r, self.all_ways, int(admin_level))
+            self.__add_members(r, int(admin_level))
+
+    # Add all member ways of relation r to dict all_ways with r's admin level
+    def __add_members(self, r, admin_level):
+        for m in r.members:
+            if m.type == "w":
+                if m.ref not in self.all_ways:
+                    self.all_ways[m.ref] = []
+                self.all_ways[m.ref].append(admin_level)
 
 
 # Pass ways in all_ways to the writer (only for the lowest admin_level if they

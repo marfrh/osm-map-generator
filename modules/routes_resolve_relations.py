@@ -21,6 +21,7 @@ route_sets = {
 
 osmc_color = {"black", "whiteyellow", "red", "green", "blue", "brown",
               "orange", "gray", "purple"}
+
 osmc_fg = {"ammonit", "bridleway", "heart", "hiker", "mine", "shell",
            "shell_modern", "tower", "black_arch", "black_backslash",
            "black_bar", "black_circle", "black_corner", "black_crest",
@@ -72,6 +73,7 @@ osmc_fg = {"ammonit", "bridleway", "heart", "hiker", "mine", "shell",
            "yellow_shell", "yellow_slash", "yellow_stripe", "yellow_triangle",
            "yellow_triangle_line", "yellow_triangle_turned", "yellow_turned_t",
            "yellow_x"}
+
 osmc_bg = {"black", "black_circle", "black_frame", "black_round", "white",
            "white_circle", "white_frame", "white_round", "yellow",
            "yellow_circle", "yellow_frame", "yellow_round", "red",
@@ -81,6 +83,7 @@ osmc_bg = {"black", "black_circle", "black_frame", "black_round", "white",
            "orange", "orange_circle", "orange_frame", "orange_round", "gray",
            "gray_circle", "gray_frame", "gray_round", "purple",
            "purple_circle", "purple_frame", "purple_round"}
+
 osmc_tc = {"black", "white", "yellow", "red", "green", "blue", "brown",
            "orange", "gray", "purple"}
 
@@ -108,238 +111,20 @@ def network_priority(network):
 def network_cycle_to_mtb(network):
     network_dict = {"icn": "imn", "ncn": "nmn", "rcn": "rmn", "lcn": "lmn",
                     "ocn": "omn", "pcn": "pmn", "": ""}
-    if network in network_dict:
-        return network_dict[network]
-    else:
-        return ""
+    return network_dict.get(network, "")
 
 
 # return chw network tag value corresponding to osm cycle network tag value
 def network_cycle_to_chw(network):
     network_dict = {"icn": "ich", "ncn": "nch", "rcn": "rch", "lcn": "lch",
                     "ocn": "och", "pcn": "pch", "": ""}
-    if network in network_dict:
-        return network_dict[network]
-    else:
-        return ""
-
-
-# return osm tag value, replace "None" with ""
-def get_tag(obj_tags, name):
-    tag = obj_tags.get(name)
-    if tag is None:
-        return ""
-    else:
-        return tag
-
-
-# delete key from dict
-def del_key(dct, name):
-    if name in dct.keys():
-        del dct[name]
+    return network_dict.get(network, "")
 
 
 # delete keys from dict
 def del_key_list(dct, name_list):
     for name in name_list:
-        del_key(dct, name)
-
-
-# Identify and return the relation of way_rel_list with the highest network
-# priority. If this relation has an empty ref tag value, try to get one from
-# another relation with the same priority (Backup 1). If there is none with
-# a ref tag, use the ref tag of a relation with lower priority, if available
-# (Backup 2).
-def highest_priority_rel(way_rel_list):
-
-    # Case 1: Only one parent relation.
-    if len(way_rel_list) == 1:
-        rel_result = way_rel_list[0]
-
-    # Case 2: More than one parent relation.
-    elif len(way_rel_list) > 1:
-        priority = -1
-        for i_rel, rel in enumerate(way_rel_list):
-            if network_priority(rel["network"]) > priority:
-                priority = network_priority(rel["network"])
-                rel_result = rel
-
-        # Backup 1
-        if rel_result["ref"] == "":
-            for rel in way_rel_list:
-                if (network_priority(rel["network"]) == priority
-                        and rel["ref"] != ""):
-                    rel_result["ref"] = rel["ref"]
-                    break
-
-        # Backup 2
-        if rel_result["ref"] == "":
-            for rel in way_rel_list:
-                if rel["ref"] != "":
-                    rel_result["ref"] = rel["ref"]
-                    break
-
-    return rel_result
-
-
-# Collect and prepare network, ref, mtb_role, osmc_dict for the highest
-# priority route a way is member of. Determine via osmc_symbol dict whether
-# way_id shoudl get an osmc symbol.
-def get_route_data(way_rel_list, osmc_symbols, way_id):
-
-    route_data = highest_priority_rel(way_rel_list)
-
-    result = {}
-    result["ref"] = route_data["ref"]
-    result["network"] = route_data["network"]
-    result["mtb_role"] = ""
-    result["osmc"] = {}
-
-    if "mtb_role" in route_data.keys():
-        result["mtb_role"] = route_data["mtb_role"]
-
-    # osmc symbol only not for all ways
-    if "osmc" in route_data:
-        result["osmc"] = route_data["osmc"]
-        if osmc_symbols[route_data["id"]][way_id] == 1:
-            result["osmc"]["symbol"] = "yes"
-        else:
-            result["osmc"]["symbol"] = "no"
-
-    # mapsforge/tag-mapping: ref tag is not allowed to contain only numbers
-    if result["ref"].isdigit():
-        result["ref"] += " "
-
-    return result
-
-
-# Get route tag value if it matches the desired network_type.
-def get_route_tag(r_tags, network_type):
-    route_temp = get_tag(r_tags, "route").lower()
-
-    if network_type in route_sets:
-        route = ""
-        for rt in route_temp.split(";"):
-            if rt in route_sets[network_type]:
-                route = rt
-                break
-        return route
-    else:
-        return ""
-
-
-# Get network tag value if it matches the desired network_type.
-# For mtb networks, transform cycle network to mtb network (e.g. lcn -> lmn)
-def get_network_tag(r_tags, network_type):
-    network_temp = get_tag(r_tags, "network").lower()
-
-    if network_type in network_sets:
-        network = ""
-        for nw in network_temp.split(";"):
-            if nw in network_sets[network_type]:
-                network = nw
-                break
-
-        if network_type == "mtb":
-            network = network_cycle_to_mtb(network)
-
-        return network
-    else:
-        return ""
-
-
-# check if route is in state proposed and change network accordingly
-def check_proposed(r_tags, network, network_type):
-    state_temp = get_tag(r_tags, "state").lower()
-    if state_temp == "proposed":
-        if network_type == "hk":
-            return "pwn"
-        if network_type == "cy":
-            return "pcn"
-        if network_type == "mtb":
-            return "pmn"
-    else:
-        return network
-
-
-# check if route is node network and change network accordingly
-def check_node_network(r_tags, network, network_type):
-    network_type_temp = get_tag(r_tags, "network:type").lower()
-    if network_type_temp == "node_network":
-        if network_type == "hk":
-            return "own"
-        if network_type == "cy":
-            return "ocn"
-        if network_type == "mtb":
-            return "omn"
-    else:
-        return network
-
-
-# add osmc waycolor to tag list and create a osmc symbol node if the ways
-# should receive an osmc symbol (node is stored in osmc_nodes_hk)
-def process_osmc_symbol_for_way(way, osmc, tag_list, osmc_nodes_hk):
-    # "wc" in osmc.keys() --> check if osmc data exists
-    if "wc" in osmc:
-        if osmc["wc"] != "":
-            tag_list["osmc_color"] = "wmco_" + osmc["wc"]
-
-        if osmc["symbol"] == "yes":
-            n_nodes = len(way.nodes)
-            symbol_node = way.nodes[math.floor(n_nodes/2+0.5)].ref
-            if symbol_node not in osmc_nodes_hk:
-                osmc_nodes_hk[symbol_node] = []
-            osmc_nodes_hk[symbol_node].append(osmc)
-
-
-# extract osmc symbol data from osmc:symbol tag for hike route relations and
-# store ist in osmc dict
-def process_osmc_symbol_for_route(r_tags, osmc):
-    osmc_valid = False
-    osmc_temp = get_tag(r_tags, "osmc:symbol").split(":")
-
-    # osmc:symbol=waycolor:background:foreground:text:textcolor
-    # minimum requirement: waycolor, background and forground
-    if len(osmc_temp) >= 3:
-        osmc_valid = True
-        osmc["wc"] = osmc_temp[0].lower()
-        osmc["bg"] = osmc_temp[1].lower()
-        osmc["fg"] = osmc_temp[2].lower()
-
-        if not (osmc["wc"] in osmc_color or osmc["wc"] == ""):
-            osmc_valid = False
-        if not (osmc["bg"] in osmc_bg or osmc["bg"] == ""):
-            osmc_valid = False
-        if not (osmc["fg"] in osmc_fg or osmc["fg"] == ""):
-            osmc_valid = False
-        if not (osmc["wc"] != "" or osmc["bg"] != "" or osmc["fg"] != ""):
-            osmc_valid = False
-
-    # optional: text
-    if len(osmc_temp) >= 4:
-        # cut text to max 5 letters
-        osmc["t"] = osmc_temp[3][:5]
-
-    # optional: textcolor
-    if len(osmc_temp) == 5:
-        osmc["tc"] = osmc_temp[4].lower()
-        if osmc_valid and osmc["tc"] in osmc_tc:
-            osmc_valid = True
-        else:
-            osmc_valid = False
-
-    return osmc_valid
-
-
-# Add all member ways of a relation to osmc_symbols dict.
-# (Later, funktion distribute_osmc_symbols will add the information wheter a
-# way should receive an osmc symbol.)
-def add_way_osmc(rel, osmc_symbols):
-    osmc_symbols_temp = {}
-    for m in rel.members:
-        if m.type == "w":
-            osmc_symbols_temp[m.ref] = ""
-    osmc_symbols[rel.id] = osmc_symbols_temp
+        dct.pop(name, None)
 
 
 # Collect data necessarc for resolving route relations. Resolving route
@@ -372,13 +157,13 @@ class collect_route_data(osmium.SimpleHandler):
         if r.tags.get("type") not in {"route", "network"}:
             return
 
-        route_hk = get_route_tag(r.tags, "hk")
-        route_cy = get_route_tag(r.tags, "cy")
-        route_mtb = get_route_tag(r.tags, "mtb")
+        route_hk = self.__get_route_tag(r.tags, "hk")
+        route_cy = self.__get_route_tag(r.tags, "cy")
+        route_mtb = self.__get_route_tag(r.tags, "mtb")
 
-        network_hk = get_network_tag(r.tags, "hk")
-        network_cy = get_network_tag(r.tags, "cy")
-        network_mtb = get_network_tag(r.tags, "mtb")
+        network_hk = self.__get_network_tag(r.tags, "hk")
+        network_cy = self.__get_network_tag(r.tags, "cy")
+        network_mtb = self.__get_network_tag(r.tags, "mtb")
 
         hk = False
         cy = False
@@ -388,31 +173,31 @@ class collect_route_data(osmium.SimpleHandler):
         if route_hk != "" or network_hk != "":
             if network_hk == "":
                 network_hk = "lwn"
-            network_hk = check_proposed(r.tags, network_hk, "hk")
-            network_hk = check_node_network(r.tags, network_hk, "hk")
+            network_hk = self.__check_proposed(r.tags, network_hk, "hk")
+            network_hk = self.__check_node_network(r.tags, network_hk, "hk")
             hk = True
 
         # route tag is necessary to differentiate between cylce/mtb
         if route_cy != "":
             if network_cy == "":
                 network_cy = "lcn"
-            network_cy = check_proposed(r.tags, network_cy, "cy")
-            network_cy = check_node_network(r.tags, network_cy, "cy")
+            network_cy = self.__check_proposed(r.tags, network_cy, "cy")
+            network_cy = self.__check_node_network(r.tags, network_cy, "cy")
             cy = True
 
         # route tag is necessary to differentiate between cylce/mtb
         if route_mtb != "":
             if network_mtb == "":
                 network_mtb = "lmn"
-            network_mtb = check_proposed(r.tags, network_mtb, "mtb")
-            network_mtb = check_node_network(r.tags, network_mtb, "mtb")
+            network_mtb = self.__check_proposed(r.tags, network_mtb, "mtb")
+            network_mtb = self.__check_node_network(r.tags, network_mtb, "mtb")
             mtb = True
 
         # only proceed if relation is a valid hike / cycle / mtb route
         if not (hk or cy or mtb):
             return
 
-        ref = get_tag(r.tags, "ref")
+        ref = r.tags.get("ref", "")
 
         if hk:
             relation = {
@@ -424,10 +209,10 @@ class collect_route_data(osmium.SimpleHandler):
 
             # process osmc:symbol tag and store data if appropriate
             osmc = {}
-            osmc_valid = process_osmc_symbol_for_route(r.tags, osmc)
+            osmc_valid = self.__process_osmc_symbol(r.tags, osmc)
             if osmc_valid:
                 relation["osmc"] = osmc
-                add_way_osmc(r, self.osmc_symbols)
+                self.__add_way_osmc(r)
 
             # add all member ways to route processing dict
             self.__add_ways(r.members, self.ways_hk, relation, False)
@@ -439,7 +224,7 @@ class collect_route_data(osmium.SimpleHandler):
                 "route": route_cy,
                 "network": network_cy,
             }
-            if get_tag(r.tags, "cycle_highway") == "yes":
+            if r.tags.get("cycle_highway") == "yes":
                 self.__add_ways(r.members, self.ways_chw, relation, False)
             else:
                 self.__add_ways(r.members, self.ways_cy, relation, False)
@@ -456,7 +241,7 @@ class collect_route_data(osmium.SimpleHandler):
     def way(self, w):
         self.ways_nodecount[w.id] = len(w.nodes)
 
-    # add all members of type way to dictionary "ways", together with
+    # Add all members of type way to dictionary "ways", together with
     # information about the parent relation (rel_dict). For mtb-routes, add
     # role forwared/backward to rel_dict.
     def __add_ways(self, members, ways, rel_dict, mtb):
@@ -471,6 +256,113 @@ class collect_route_data(osmium.SimpleHandler):
                 if m.ref not in ways:
                     ways[m.ref] = []
                 ways[m.ref].append(rel_dict)
+
+    # Get route tag value if it matches the desired network_type.
+    def __get_route_tag(self, r_tags, network_type):
+        route_temp = r_tags.get("route", "").lower()
+
+        if network_type in route_sets:
+            route = ""
+            for rt in route_temp.split(";"):
+                if rt in route_sets[network_type]:
+                    route = rt
+                    break
+            return route
+        else:
+            return ""
+
+    # Get network tag value if it matches the desired network_type. For mtb
+    # networks, transform cycle network to mtb network (e.g. lcn -> lmn)
+    def __get_network_tag(self, r_tags, network_type):
+        network_temp = r_tags.get("network", "").lower()
+
+        if network_type in network_sets:
+            network = ""
+            for nw in network_temp.split(";"):
+                if nw in network_sets[network_type]:
+                    network = nw
+                    break
+
+            if network_type == "mtb":
+                network = network_cycle_to_mtb(network)
+
+            return network
+        else:
+            return ""
+
+    # check if route is in state proposed and change network accordingly
+    def __check_proposed(self, r_tags, network, network_type):
+        state_temp = r_tags.get("state", "").lower()
+        if state_temp == "proposed":
+            if network_type == "hk":
+                return "pwn"
+            if network_type == "cy":
+                return "pcn"
+            if network_type == "mtb":
+                return "pmn"
+        else:
+            return network
+
+    # check if route is node network and change network accordingly
+    def __check_node_network(self, r_tags, network, network_type):
+        network_type_temp = r_tags.get("network:type", "").lower()
+        if network_type_temp == "node_network":
+            if network_type == "hk":
+                return "own"
+            if network_type == "cy":
+                return "ocn"
+            if network_type == "mtb":
+                return "omn"
+        else:
+            return network
+
+    # extract osmc symbol data from osmc:symbol tag for hike route relations
+    # and store ist in osmc dict
+    def __process_osmc_symbol(self, r_tags, osmc):
+        osmc_valid = False
+        osmc_temp = r_tags.get("osmc:symbol", "").split(":")
+
+        # osmc:symbol=waycolor:background:foreground:text:textcolor
+        # minimum requirement: waycolor, background and forground
+        if len(osmc_temp) >= 3:
+            osmc_valid = True
+            osmc["wc"] = osmc_temp[0].lower()
+            osmc["bg"] = osmc_temp[1].lower()
+            osmc["fg"] = osmc_temp[2].lower()
+
+            if not (osmc["wc"] in osmc_color or osmc["wc"] == ""):
+                osmc_valid = False
+            if not (osmc["bg"] in osmc_bg or osmc["bg"] == ""):
+                osmc_valid = False
+            if not (osmc["fg"] in osmc_fg or osmc["fg"] == ""):
+                osmc_valid = False
+            if not (osmc["wc"] != "" or osmc["bg"] != "" or osmc["fg"] != ""):
+                osmc_valid = False
+
+        # optional: text
+        if len(osmc_temp) >= 4:
+            # cut text to max 5 letters
+            osmc["t"] = osmc_temp[3][:5]
+
+        # optional: textcolor
+        if len(osmc_temp) == 5:
+            osmc["tc"] = osmc_temp[4].lower()
+            if osmc_valid and osmc["tc"] in osmc_tc:
+                osmc_valid = True
+            else:
+                osmc_valid = False
+
+        return osmc_valid
+
+    # Add all member ways of a relation to osmc_symbols dict.
+    # (Later, funktion distribute_osmc_symbols can add the information wheter
+    # a way should receive an osmc symbol.)
+    def __add_way_osmc(self, rel):
+        osmc_symbols_temp = {}
+        for m in rel.members:
+            if m.type == "w":
+                osmc_symbols_temp[m.ref] = ""
+        self.osmc_symbols[rel.id] = osmc_symbols_temp
 
 
 # All ways, which are part of of a hiking/cycle/mtb route inherit route
@@ -495,10 +387,6 @@ class process_route_ways(osmium.SimpleHandler):
         self.way_id = -60000000000
 
     def way(self, w):
-        hk = False
-        cy = False
-        mtb = False
-
         hk = w.id in self.ways_hk
         mtb = w.id in self.ways_mtb
         cy = w.id in self.ways_cy
@@ -512,13 +400,12 @@ class process_route_ways(osmium.SimpleHandler):
             tag_list[k] = v
 
         if hk:
-            res = get_route_data(self.ways_hk[w.id], self.osmc_symbols, w.id)
+            res = self.__get_route_data(self.ways_hk[w.id], w.id)
 
             tag_list["hknetwork"] = res["network"]
             tag_list["ref_hike"] = res["ref"]
 
-            process_osmc_symbol_for_way(w, res["osmc"], tag_list,
-                                        self.osmc_nodes_hk)
+            self.__process_osmc_symbol(w, res["osmc"], tag_list)
 
             if split_mtb_cycle_ways:
                 # also for split_mtb_cycle_ways == True, hike-way overwrites
@@ -527,7 +414,7 @@ class process_route_ways(osmium.SimpleHandler):
                 self.writer.add_way(way)
 
         if mtb:
-            res = get_route_data(self.ways_mtb[w.id], self.osmc_symbols, w.id)
+            res = self.__get_route_data(self.ways_mtb[w.id], w.id)
 
             tag_list["mtbnetwork"] = res["network"]
             tag_list["ref_mtb"] = res["ref"]
@@ -541,7 +428,7 @@ class process_route_ways(osmium.SimpleHandler):
                 self.way_id = self.way_id + 1
 
         if cy:
-            res = get_route_data(self.ways_cy[w.id], self.osmc_symbols, w.id)
+            res = self.__get_route_data(self.ways_cy[w.id], w.id)
 
             tag_list["network"] = res["network"]
             tag_list["ref_cycle"] = res["ref"]
@@ -554,7 +441,7 @@ class process_route_ways(osmium.SimpleHandler):
                 self.way_id = self.way_id + 1
 
         if chw:
-            res = get_route_data(self.ways_chw[w.id], self.osmc_symbols, w.id)
+            res = self.__get_route_data(self.ways_chw[w.id], w.id)
 
             tag_list["cycle_highway"] = network_cycle_to_chw(res["network"])
             tag_list["ref_chw"] = res["ref"]
@@ -571,19 +458,84 @@ class process_route_ways(osmium.SimpleHandler):
             way = w.replace(tags=tag_list)
             self.writer.add_way(way)
 
+    # Identify and return the relation of way_rel_list with the highest network
+    # priority. If this relation has an empty ref tag value, try to get one
+    # from another relation with the same priority (Backup 1). If there is none
+    # with a ref tag, use the ref tag of a relation with lower priority, if
+    # available (Backup 2).
+    def __highest_priority_rel(self, way_rel_list):
 
-# add all available osmc tags to tag_list
-def add_osmc_tags(tag_list, osmc):
-    tag_list["osmc"] = "osmc_yes"
-    if osmc["bg"] != "":
-        tag_list["osmc_background"] = "wmbg_" + osmc["bg"]
-    if osmc["fg"] != "":
-        tag_list["osmc_foreground"] = "wmfg_" + osmc["fg"]
-    if "t" in osmc.keys():
-        tag_list["name"] = osmc["t"]
-        tag_list["osmc_text_len"] = "wmtl_" + str(len(osmc["t"]))
-    if "tc" in osmc.keys():
-        tag_list["osmc_textcolor"] = "wmtc_" + osmc["tc"]
+        # Case 1: Only one parent relation.
+        if len(way_rel_list) == 1:
+            rel_result = way_rel_list[0]
+
+        # Case 2: More than one parent relation.
+        elif len(way_rel_list) > 1:
+            priority = -1
+            for i_rel, rel in enumerate(way_rel_list):
+                if network_priority(rel["network"]) > priority:
+                    priority = network_priority(rel["network"])
+                    rel_result = rel
+
+            # Backup 1
+            if rel_result["ref"] == "":
+                for rel in way_rel_list:
+                    if (network_priority(rel["network"]) == priority
+                            and rel["ref"] != ""):
+                        rel_result["ref"] = rel["ref"]
+                        break
+
+            # Backup 2
+            if rel_result["ref"] == "":
+                for rel in way_rel_list:
+                    if rel["ref"] != "":
+                        rel_result["ref"] = rel["ref"]
+                        break
+
+        return rel_result
+
+    # Collect and prepare network, ref, mtb_role, osmc_dict for the highest
+    # priority route a way is member of.
+    # Determine via osmc_symbol dict whether way_id shoudl get an osmc symbol.
+    def __get_route_data(self, way_rel_list, way_id):
+
+        route_data = self.__highest_priority_rel(way_rel_list)
+
+        result = {}
+        result["ref"] = route_data["ref"]
+        result["network"] = route_data["network"]
+        result["mtb_role"] = ""
+        result["osmc"] = {}
+
+        if "mtb_role" in route_data.keys():
+            result["mtb_role"] = route_data["mtb_role"]
+
+        # osmc symbol only not for all ways
+        if "osmc" in route_data:
+            result["osmc"] = route_data["osmc"]
+            if self.osmc_symbols[route_data["id"]][way_id] == 1:
+                result["osmc"]["symbol"] = "yes"
+            else:
+                result["osmc"]["symbol"] = "no"
+
+        # mapsforge/tag-mapping: ref tag is not allowed to contain only numbers
+        if result["ref"].isdigit():
+            result["ref"] += " "
+
+        return result
+
+    # add osmc waycolor to tag list and create a osmc symbol node if the ways
+    # should receive an osmc symbol (node is stored in osmc_nodes_hk)
+    def __process_osmc_symbol(self, way, osmc, tag_list):
+        if osmc.get("wc", "") != "":
+            tag_list["osmc_color"] = "wmco_" + osmc["wc"]
+
+        if osmc.get("symbol") == "yes":
+            n_nodes = len(way.nodes)
+            symbol_node = way.nodes[math.floor(n_nodes/2+0.5)].ref
+            if symbol_node not in self.osmc_nodes_hk:
+                self.osmc_nodes_hk[symbol_node] = []
+            self.osmc_nodes_hk[symbol_node].append(osmc)
 
 
 # All nodes, which should receive an osmc symbol according to dict
@@ -609,15 +561,28 @@ class process_osmc_nodes(osmium.SimpleHandler):
             for k, v in n.tags:
                 tag_list[k] = v
             osmc_tags = self.osmc_nodes_hk[n.id][0]
-            add_osmc_tags(tag_list, osmc_tags)
+            self.__add_osmc_tags(tag_list, osmc_tags)
 
             # delete foreground if background color is identical to foreground
             # color (redundant information)
             if osmc_tags["bg"] == osmc_tags["fg"].split("_")[0]:
-                del_key(tag_list, "osmc_foreground")
+                tag_list.pop("osmc_foreground", None)
 
             node = n.replace(tags=tag_list)
             self.writer.add_node(node)
+
+    # add all available osmc tags to tag_list
+    def __add_osmc_tags(self, tag_list, osmc):
+        tag_list["osmc"] = "osmc_yes"
+        if osmc["bg"] != "":
+            tag_list["osmc_background"] = "wmbg_" + osmc["bg"]
+        if osmc["fg"] != "":
+            tag_list["osmc_foreground"] = "wmfg_" + osmc["fg"]
+        if "t" in osmc.keys():
+            tag_list["name"] = osmc["t"]
+            tag_list["osmc_text_len"] = "wmtl_" + str(len(osmc["t"]))
+        if "tc" in osmc.keys():
+            tag_list["osmc_textcolor"] = "wmtc_" + osmc["tc"]
 
 
 # determine whether way should get osmc symbol

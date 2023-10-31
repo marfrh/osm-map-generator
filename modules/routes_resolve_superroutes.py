@@ -52,15 +52,10 @@ def is_node_network(r_tags):
 
 # return a list of network types (lwn, lcn, ...)
 def get_network(r_tags):
-    network_tag = r_tags.get("network")
-    if network_tag is None:
-        network = [""]
-    else:
-        network = network_tag.lower().replace(" ", "").split(";")
-        for nw in network:
-            if nw not in {"iwn", "nwn", "rwn", "lwn", "icn", "ncn", "rcn",
-                          "lcn"}:
-                nw = ""
+    network = r_tags.get("network", "").lower().replace(" ", "").split(";")
+    for nw in network:
+        if nw not in {"iwn", "nwn", "rwn", "lwn", "icn", "ncn", "rcn", "lcn"}:
+            nw = ""
     return network
 
 
@@ -114,17 +109,15 @@ class collect_route_data(osmium.SimpleHandler):
         if not route_tag_is_valid(r.tags) and not is_node_network(r.tags):
             return
 
-        # add relation to all_routes, together with list of network tyes add
+        # add relation to all_routes, together with list of network types add
         # relation member list
-        member_rel_list = []
-        member_rel_list.extend(m.ref for m in r.members if m.type == "r")
+        member_rel_list = [m.ref for m in r.members if m.type == "r"]
         network = get_network(r.tags)
-        route_temp = {
+        self.all_routes[r.id] = {
             "network": network,
             "member_rels": member_rel_list,
             "cycle_highway": get_cycle_highway(r.tags)
         }
-        self.all_routes[r.id] = route_temp
 
         # add all member relations to self.superroute_member_list
         self.__add_members_to_superroute_list(r, network)
@@ -132,9 +125,8 @@ class collect_route_data(osmium.SimpleHandler):
     # add all member relations of r to superroute_member_list (passed by ref),
     # one entry per network type (e.g. lwn, lcn, ...)
     def __add_members_to_superroute_list(self, r, network):
-        ref_temp = r.tags.get("ref")
-        if ref_temp is None:
-            ref_temp = ""
+        ref_temp = r.tags.get("ref", "")
+        name_temp = r.tags.get("name", "")
 
         for m in r.members:
             if m.type == "r":
@@ -142,7 +134,7 @@ class collect_route_data(osmium.SimpleHandler):
                     superroute_member = {
                         "srm_id": m.ref,
                         "parent_id": r.id,
-                        "parent_name": r.tags.get("name"),
+                        "parent_name": name_temp,
                         "parent_ref": ref_temp,
                         "parent_network": nw
                     }
@@ -178,13 +170,13 @@ class rel_copy(osmium.SimpleHandler):
                 for k, v in r.tags:
                     tag_list[k] = v
                 name = src_tags["parent_name"]
-                if name is not None:
+                if name != "":
                     tag_list["name"] = name
                 ref = src_tags["parent_ref"]
-                if ref is not None:
+                if ref != "":
                     tag_list["ref"] = ref
                 network = src_tags["parent_network"]
-                if network is not None:
+                if network != "":
                     tag_list["network"] = network
 
                 rel = r.replace(id=self.rel_id, tags=tag_list)

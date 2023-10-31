@@ -41,10 +41,10 @@ class process_route_refs(osmium.SimpleHandler):
         self.writer = writer
 
     def relation(self, r):
-        ref_temp = r.tags.get("ref")
+        ref_temp = r.tags.get("ref", "")
 
         # case 1: relation has a ref tag: limit it to seven characters
-        if ref_temp is not None and ref_temp != "":
+        if ref_temp != "":
             ref = ref_temp
 
             # limit length to 7 characters

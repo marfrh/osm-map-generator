@@ -4,23 +4,6 @@ import os
 import time
 
 
-# map peak dominance to pd_x tags
-def dominance_to_dist_group(dominance):
-    dom = int(dominance)
-    if dom < 1200:
-        dist_group = "pd_5"
-    elif dom < 5000:
-        dist_group = "pd_4"
-    elif dom < 9000:
-        dist_group = "pd_3"
-    elif dom < 25000:
-        dist_group = "pd_2"
-    elif dom < 100000000:
-        dist_group = "pd_1"
-
-    return dist_group
-
-
 # Attach pead dominance tag from peak_data to all peaks/vocanos and attach
 # saddle direction from saddle_data to all saddles. The original nodes are
 # overwritten.
@@ -42,7 +25,7 @@ class process_peaks_saddles(osmium.SimpleHandler):
 
             if str(n.id) in self.s_peak:
                 i = self.peak_data[0].index(str(n.id))
-                pd = dominance_to_dist_group(self.peak_data[3][i])
+                pd = self.__dominance_to_dist_group(self.peak_data[3][i])
             else:
                 pd = "pd_5"
 
@@ -67,6 +50,22 @@ class process_peaks_saddles(osmium.SimpleHandler):
 
                 node = n.replace(tags=tag_list)
                 self.writer.add_node(node)
+
+    # map peak dominance to pd_x tags
+    def __dominance_to_dist_group(self, dominance):
+        dom = int(dominance)
+        if dom < 1200:
+            dist_group = "pd_5"
+        elif dom < 5000:
+            dist_group = "pd_4"
+        elif dom < 9000:
+            dist_group = "pd_3"
+        elif dom < 25000:
+            dist_group = "pd_2"
+        elif dom < 100000000:
+            dist_group = "pd_1"
+
+        return dist_group
 
 
 def run(file_in, map_, file_out):

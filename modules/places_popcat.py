@@ -4,48 +4,6 @@ import os
 import time
 
 
-# catch non-integer population values (sometimes descriptive texts)
-def int_population(population):
-    try:
-        pop = int(population)
-    except Exception:
-        pop = 0
-
-    return pop
-
-
-# translate population to popcat tag value
-def population_to_popcat(population):
-    pop = int_population(population)
-
-    if pop == 0:
-        popcat = "pc_0"
-    elif pop < 1000:
-        popcat = "pc_1"
-    elif pop < 5000:
-        popcat = "pc_1000"
-    elif pop < 10000:
-        popcat = "pc_5000"
-    elif pop < 20000:
-        popcat = "pc_10000"
-    elif pop < 30000:
-        popcat = "pc_20000"
-    elif pop < 50000:
-        popcat = "pc_30000"
-    elif pop < 100000:
-        popcat = "pc_50000"
-    elif pop < 200000:
-        popcat = "pc_100000"
-    elif pop < 500000:
-        popcat = "pc_200000"
-    elif pop < 1000000:
-        popcat = "pc_500000"
-    elif pop >= 1000000:
-        popcat = "pc_1000000"
-
-    return popcat
-
-
 # Create popcat tag for nodes by using population tag or data from popcat_data.
 # The file to be read should only contain nodes with tag key "place"
 class process_nodes(osmium.SimpleHandler):
@@ -72,12 +30,12 @@ class process_nodes(osmium.SimpleHandler):
         # else: use population tag if available
         elif n.tags.get("population") is not None:
             population = n.tags.get("population")
-            popcat_value = population_to_popcat(population)
+            popcat_value = self.__population_to_popcat(population)
 
         # else: use population tag from opengeodb
         elif n.tags.get("openGeoDB:population") is not None:
             population = n.tags.get("openGeoDB:population")
-            popcat_value = population_to_popcat(population)
+            popcat_value = self.__population_to_popcat(population)
 
         # prepare and write popcat node
         tag_list = {}
@@ -87,6 +45,46 @@ class process_nodes(osmium.SimpleHandler):
 
         popcat_node = n.replace(tags=tag_list)
         self.writer.add_node(popcat_node)
+
+    # helper to catch non-integer population values
+    def __int_population(self, population):
+        try:
+            pop = int(population)
+        except Exception:
+            pop = 0
+
+        return pop
+
+    # translate population to popcat tag value
+    def __population_to_popcat(self, population):
+        pop = self.__int_population(population)
+
+        if pop == 0:
+            popcat = "pc_0"
+        elif pop < 1000:
+            popcat = "pc_1"
+        elif pop < 5000:
+            popcat = "pc_1000"
+        elif pop < 10000:
+            popcat = "pc_5000"
+        elif pop < 20000:
+            popcat = "pc_10000"
+        elif pop < 30000:
+            popcat = "pc_20000"
+        elif pop < 50000:
+            popcat = "pc_30000"
+        elif pop < 100000:
+            popcat = "pc_50000"
+        elif pop < 200000:
+            popcat = "pc_100000"
+        elif pop < 500000:
+            popcat = "pc_200000"
+        elif pop < 1000000:
+            popcat = "pc_500000"
+        elif pop >= 1000000:
+            popcat = "pc_1000000"
+
+        return popcat
 
 
 def run(file_in, map_, file_out):

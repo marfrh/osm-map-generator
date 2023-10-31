@@ -128,11 +128,10 @@ class collect_data_and_limit_tags(osmium.SimpleHandler):
             self.__add_members_to_relation_ways(r.members)
 
     def way(self, w):
-        tags = {}
-
         # Store ways without relevant tags (defined by key_set) and store
         # coastline ways
         relevant = False
+        tags = {}
         for k, v in w.tags:
             tags[k] = v
             if k in self.key_set:
@@ -207,8 +206,7 @@ class collect_data_and_limit_tags(osmium.SimpleHandler):
             # reduce tags if necessary
             if n > self.threshold:
                 for r in redlist:
-                    if r in tags.keys():
-                        del tags[r]
+                    tags.pop(r, None)
                     if len(tags.keys()) <= self.threshold:
                         break
 
