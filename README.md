@@ -42,10 +42,9 @@ In the current state, osm-map-generator will only work in a Linux environment as
 
 ## Usage
 1. Define a map target in `modules/map_targets.py` or use one of the examples.
-   <br> See `default_map_dict` and `contour1` / `contour3` for available settings.
-   <br>Attention: The example `Canary_Islands` only works with [custom hgt files](https://github.com/marfrh/osm-map-generator#use-of-custom-hgt-files).
-3. Make sure a polygon file (`.poly`) with the same name as the map target is placed in folder `polygons/`.
-   <br>[Polygon Files](https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format) can be created with JOSM.
+   <br> See `default_map_dict` and `contour1` / `contour3` / `contour1_custom` for available settings.
+   <br>Attention: The examples `Loro_Ciuffenna`, `Canary_Islands`, `Alps` and `Italy` rely on [custom hgt files](https://github.com/marfrh/osm-map-generator#use-of-custom-hgt-files).
+3. Make sure a polygon file (`.poly`) with the same name as the map target is placed in folder `polygons/`. This is true for all provided examples. [Polygon Files](https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format) can be created with JOSM. Currently, `osm-map-generator` only works with `.poly` files that contain only one polygon.
 5. Run `./osm-map-generator map_name result.map`.
    <br>Option `-p` exists to use the osm planet file as source, option `-k` keeps intermediate results and the final map data osm file.
    <br>See `./osm-map-generator --help` for usage details.
@@ -71,19 +70,14 @@ The `whitelist` in `modules/reduce_data.py` prevents these relations from being 
 The map target option `"use_land_grid_split": True` activates a self-invented algorithm to cut large land polygons into smaller overlapping polygons. This can save a small amount of rendering time for large maps (e.g. for map target Italy grid split processing time is ~5 minutes with a benefit in `mapsforge-map-writer` rendering time of ~15 minutes).
 
 ### Use of custom hgt files
-[https://sonny.4lima.de/](https://sonny.4lima.de/) provides detailed 1" and 3" hgt files for Europe. The following steps describe how to integrate these 1" hgt files in the map creation process:
+[https://sonny.4lima.de/](https://sonny.4lima.de/) provides detailed 1" and 3" hgt files for Europe. The following steps describe how to integrate these in the map creation process:
 1. Download the desired hgt files from [https://sonny.4lima.de/](https://sonny.4lima.de/)
-2. Extract and copy the hgt files to directory `tmp/hgt/VIEW1`.
-3. All filenames, which are not already listed in the index file `tmp/hgt/viewfinderHgtIndex_1.txt`, need to be added as a new entry, e.g.:
-```
-[http://viewfinderpanoramas.org/dem1/Extra.zip]
-N27W016
-N27W017
-...
-```
-See folder `utilities` for an example entry that covers all of Europe as of mid 2023.
+2. Extract the hgt files to a directory, e.g. `tmp/hgt/custom/`.
+3. Adjust `custom_hgt_dir` in `map_targets.py` to point to this directory.
+4. All filenames, which are not already listed in the index file `tmp/hgt/viewfinderHgtIndex_1.txt`, need to be added as a new entry, e.g.:
+
 > [!NOTE]
-> The map target example `Canary_Islands` only works with these custom hgt files and steps described above, as the area is not covered by Viewfinder Panoramas 1" data. 
+> Currently, the examples `Loro_Ciuffenna`, `Canary_Islands`, `Alps` and `Italy` are configured to rely on custom hgt files. 
 
 ## Implementation Details
 
@@ -97,6 +91,7 @@ The following measures were applied to achieve a fast map creation process:
   - Relevant keys are taken from map theme / tag-mapping.xml.
   - This step leads to a huge improvement in `mapsforge-map-writer` rendering time (Example for whole Italy: `reduce_data.py` processing time <5 minutes, rendering time without data reduction ~14h, with data reduction <5h, -66%).
 - Optional [Land polygon grid split](https://github.com/marfrh/osm-map-generator#land-polygon-grid-split) that can save a small amount of rendering time.
+- In case of custom hgt files, only pass possibly relevant hgt tiles to pyhgtmap. This saves a lot of time as custom hgt folders can contain many files.
 
 ### OSM ID ranges
 Each object which is not part of the osm source data (e.g. newly created poly labels, contour lines, ...) needs an `osm id`. Negative ids are easy to handle as the don't collide with real osm ids. `osm-map-generator` uses the following id ranges / offsets:
