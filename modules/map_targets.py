@@ -1,9 +1,10 @@
 # dict of map targets
 map_targets = {}
 
+# Contourline settings. Only the parameters listed here are supported,
+# see pyhgtap documentation for available values
 # 1" contourline settings
 contour1 = {
-    "srtm": "1",
     "contourline_source": "view1",
     "stepsize": "10",
     "major_medium": "500,50",
@@ -12,11 +13,19 @@ contour1 = {
 
 # 3" contourline settings
 contour3 = {
-    "srtm": "3",
     "contourline_source": "view3",
     "stepsize": "20",
     "major_medium": "500,10",
     "epsilon": "0.0001",
+}
+
+# use custom hgt files
+contour1_custom = {
+    "contourline_source": "custom",
+    "custom_hgt_dir": "tmp/hgt/custom/",
+    "stepsize": "10",
+    "major_medium": "500,50",
+    "epsilon": "0.00001",
 }
 
 # map target template with default settings
@@ -40,7 +49,7 @@ src = "http://download.geofabrik.de/europe/italy/centro-latest.osm.pbf"
 t["name"] = "Loro_Ciuffenna"
 t["source"] = src
 t["preferred_languages"] = "de,en,it"
-t["contour"] = contour1
+t["contour"] = contour1_custom
 map_targets[t["name"]] = t
 
 # Canary_Islands
@@ -52,7 +61,7 @@ t["source"] = src
 t["has_sea"] = True
 t["use_polygon_shape"] = True
 t["preferred_languages"] = "de,en,es"
-t["contour"] = contour1
+t["contour"] = contour1_custom
 map_targets[t["name"]] = t
 
 # Montenegro
@@ -74,6 +83,7 @@ t["source"] = src
 t["has_sea"] = True
 t["use_polygon_shape"] = True
 t["preferred_languages"] = "de,en,it"
+t["contour"] = contour1
 map_targets[t["name"]] = t
 
 # Wallmersdorf
@@ -121,7 +131,7 @@ t["use_land_grid_split"] = True
 t["use_polygon_shape"] = True
 t["preferred_languages"] = "de,en,fr,it,sl"
 t["tag-mapping"] = "tt_tm/tagmapping-min.xml"
-t["contour"] = contour1
+t["contour"] = contour1_custom
 t["zoom-interval-conf"] = "5,0,5,6,6,7,10,8,11,14,12,21"
 map_targets[t["name"]] = t
 
@@ -134,7 +144,7 @@ t["has_sea"] = True
 t["use_land_grid_split"] = True
 t["use_polygon_shape"] = True
 t["preferred_languages"] = "de,en,it"
-t["contour"] = contour1
+t["contour"] = contour1_custom
 map_targets[t["name"]] = t
 
 # Kaltern

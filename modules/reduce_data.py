@@ -15,7 +15,7 @@ rel_type_del_set1 = {"superroute", "route"}
 # don't have relevant tags theirselves
 rel_type_del_set2 = {"route_master", "collection", "network", "classification",
                      "tmc", "site", "watershed", "defaults", "multilinestring",
-                     "tmc:area"}
+                     "linestring", "tmc:area"}
 
 # boundary relations to delete. all necessary boundaries like mountain_areas
 # should already exist as separate polygon labels
