@@ -4,7 +4,7 @@ import time
 import zipfile
 
 
-# Determine a conservative number of threads for mapsforge-writer
+# Determine a conservative number of threads to run in parallel
 def get_thread_count():
     logical_cpus = os.cpu_count()
     if logical_cpus is None:

@@ -145,6 +145,7 @@ def run(map_, file_out):
             "--write-timestamp "
             "--no-zero-contour "
             "--hgtdir=" + hgt_dir + " "
+            "--jobs=" + str(functions.get_thread_count()) + " "
             "--simplifyContoursEpsilon=" + config["epsilon"] + " ")
 
     if config["contourline_source"] == "custom":
