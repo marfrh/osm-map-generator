@@ -38,9 +38,8 @@ class collect_admin_relation_ways(osmium.SimpleHandler):
                 self.all_ways[m.ref].append(admin_level)
 
 
-# Pass ways in all_ways to the writer (only for the lowest admin_level if they
-# are part of multiple admin-relations). Respect maximum way lengt defined by
-# max_nodes.
+# Pass ways in all_ways to the writer, but only for the lowest admin_level
+# (= highest priority) if they are part of multiple admin-relations.
 class process_ways(osmium.SimpleHandler):
     def __init__(self, all_ways, way_writer):
         osmium.SimpleHandler.__init__(self)
@@ -56,7 +55,7 @@ class process_ways(osmium.SimpleHandler):
                 return
 
             # If the way is part of multiple admin_relations, only use the
-            # lowest admin_level (=highest priority).
+            # lowest admin_level (= highest priority).
             rel_tags = {}
             rel_tags["admin_level"] = str(min(self.all_ways[w.id]))
 
