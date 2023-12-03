@@ -33,8 +33,7 @@ Tested with 32GB RAM.
 In the current state, osm-map-generator will only work in a Linux environment as it relies on `wget` and lazily redirects some output to `/dev/null`. Besides, some of the required tools can have limitations under Windows.
 
 > [!NOTE]
-> OpenSUSE has pre-built packages available for `wget`, `osmosis`, `osmconvert`, `osmfilter` and `python3-GDAL` via [https://software.opensuse.org/](https://software.opensuse.org/).
-> `pyhgtmap` and `osmium` can be installed via `pip`.
+> OpenSUSE offers pre-built packages for all dependencies from official and community repositories via [https://software.opensuse.org/](https://software.opensuse.org/).
 
 ## Installation
 1. Install and prepare [Dependencies](https://github.com/marfrh/osm-map-generator#dependencies).
