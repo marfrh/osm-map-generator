@@ -74,7 +74,6 @@ The map target option `"use_land_grid_split": True` activates a self-invented al
 1. Download the desired hgt files from [https://sonny.4lima.de/](https://sonny.4lima.de/)
 2. Extract the hgt files to a directory, e.g. `tmp/hgt/custom/`.
 3. Adjust `custom_hgt_dir` in `map_targets.py` to point to this directory.
-4. All filenames, which are not already listed in the index file `tmp/hgt/viewfinderHgtIndex_1.txt`, need to be added as a new entry, e.g.:
 
 > [!NOTE]
 > Currently, the examples `Loro_Ciuffenna`, `Canary_Islands`, `Alps` and `Italy` are configured to rely on custom hgt files. 
