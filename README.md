@@ -10,14 +10,14 @@ Python script to create mapsforge vector maps compatible to [OpenAndroMaps](http
 - [Dependencies](https://github.com/marfrh/osm-map-generator#dependencies)
 - [Installation](https://github.com/marfrh/osm-map-generator#installation)
 - [Usage](https://github.com/marfrh/osm-map-generator#usage)
-- [Advanced Usage](https://github.com/marfrh/osm-map-generator#usage)
+- [Advanced Usage](https://github.com/marfrh/osm-map-generator#advanced-usage)
 - [Implementation Details](https://github.com/marfrh/osm-map-generator#implementation-details)
 
 ## Hardware Requirements
 Tested with 32GB RAM.
 
 > [!WARNING]
-> Lower RAM might fail for large maps and/or require code adjustments (e.g. the pbf file size limit after with the mapsforge-map-writer parameter `type=hd` is added).
+> Lower RAM might fail for large maps and/or require code adjustments (e.g. the pbf file size limit after which the mapsforge-map-writer parameter `type=hd` is added).
 
 ## Dependencies
 - [osmosis](https://wiki.openstreetmap.org/wiki/Osmosis)
