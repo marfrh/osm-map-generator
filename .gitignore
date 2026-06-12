@@ -166,3 +166,6 @@ tmp/
 tt_tm/
 *.map
 *_tempfile.*
+
+# aider-chat
+.aider*
