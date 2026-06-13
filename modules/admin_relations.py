@@ -2,12 +2,16 @@ import os
 import osmium
 import time
 
+import logging
+
+# Konfiguriere das Logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 # Collect data for all admin relations with admin_level 1-4. other admin_level
 # relations will be deleted.
 class collect_admin_relation_ways(osmium.SimpleHandler):
     def __init__(self):
-        osmium.SimpleHandler.__init__(self)
+        super().__init__()
         self.all_ways = {}
 
     def relation(self, r):
@@ -42,7 +46,7 @@ class collect_admin_relation_ways(osmium.SimpleHandler):
 # (= highest priority) if they are part of multiple admin-relations.
 class process_ways(osmium.SimpleHandler):
     def __init__(self, all_ways, way_writer):
-        osmium.SimpleHandler.__init__(self)
+        super().__init__()
         self.all_ways = all_ways
         self.way_writer = way_writer
         self.way_id = -40000000000
@@ -68,28 +72,37 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info(f"File {file_out} already exists.")
         return
 
     temp_file = "tmp/temp_admin_ways.pbf"
 
     carw = collect_admin_relation_ways()
-    carw.apply_file(file_in)
+    try:
+        carw.apply_file(file_in)
+    except Exception as e:
+        logging.error(f"Error reading file {file_in}: {e}")
+        return
 
     if os.path.exists(temp_file):
         os.remove(temp_file)
-    way_writer = osmium.SimpleWriter(temp_file)
 
-    pw = process_ways(carw.all_ways, way_writer)
-    pw.apply_file(file_in)
-
-    way_writer.close()
+    try:
+        with osmium.SimpleWriter(temp_file) as way_writer:
+            pw = process_ways(carw.all_ways, way_writer)
+            pw.apply_file(file_in)
+    except Exception as e:
+        logging.error(f"Error processing ways: {e}")
+        return
 
     # sort output file
-    cmd = "osmosis -q --rbf " + temp_file + " --s --wb " + file_out
-    cmd += " omitmetadata=true"
-    os.system(cmd)
+    cmd = f"osmosis -q --rbf {temp_file} --s --wb {file_out} omitmetadata=true"
+    try:
+        os.system(cmd)
+    except Exception as e:
+        logging.error(f"Error executing command: {cmd}: {e}")
+        return
 
     os.remove(temp_file)
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info(f"{round((time.time() - start_time), 1)} seconds")
