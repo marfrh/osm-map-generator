@@ -3,7 +3,10 @@ import osmium
 import time
 
 import modules.functions as functions
+import logging
 
+# Konfiguriere das Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def write_way(writer, i, n, tl):
     w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
@@ -23,52 +26,55 @@ def write_node(writer, i, loc, tl={}):
     return i + 1
 
 
-# Create an osm file that contains the map border
-def run(map_, file_out):
-    start_time = time.time()
+def create_map_border(map_, file_out):
     polygon = "polygons/" + map_["name"] + ".poly"
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info(f"File {file_out} already exists.")
         return
 
-    writer = osmium.SimpleWriter(file_out)
+    with osmium.SimpleWriter(file_out) as writer:
+        # use polygon as map border
+        if map_["use_polygon_shape"]:
+            lon, lat = functions.poly_to_lon_lat(polygon)
 
-    # use polygon as map border
-    if map_["use_polygon_shape"]:
-        lon, lat = functions.poly_to_lon_lat(polygon)
+        # create rectangular box as map border
+        else:
+            min_lat, min_lon, max_lat, max_lon = functions.min_max_lat_lon(polygon)
+            lon = [min_lon, max_lon, max_lon, min_lon]  # lon_x
+            lat = [max_lat, max_lat, min_lat, min_lat]  # lat_y
 
-    # create rectangular box as map border
-    else:
-        min_lat, min_lon, max_lat, max_lon = functions.min_max_lat_lon(polygon)
-        lon = [min_lon, max_lon, max_lon, min_lon]  # lon_x
-        lat = [max_lat, max_lat, min_lat, min_lat]  # lat_y
+            # close map border - last node with same coordinates as first node
+            lon.append(lon[0])
+            lat.append(lat[0])
 
-        # close map border - last node with same coordinates as first node
-        lon.append(lon[0])
-        lat.append(lat[0])
+        # build and write node list
+        node_id = -len(lon)
+        nodes = []
+        for i in range(len(lon)):
+            nodes.append(node_id)
+            node_id = write_node(writer, node_id, [lon[i], lat[i]])
 
-    # build and write node list
-    node_id = -len(lon)
-    nodes = []
-    for i in range(len(lon)):
-        nodes.append(node_id)
-        node_id = write_node(writer, node_id, [lon[i], lat[i]])
+        # only tag value "(c)www.OpenAndroMaps.org" is included in tag-mapping.
+        # change tag mapping to "%s" to use arbitrary strings
+        # tag_list["ele"] = "some_text_on_map_border"
+        tag_list = {}
+        tag_list["boundary"] = "map_inner"
+        tag_list["contour_ext"] = "elevation_major"
 
-    # only tag value "(c)www.OpenAndroMaps.org" is included in tag-mapping.
-    # change tag mapping to "%s" to use arbitrary strings
-    # tag_list["ele"] = "some_text_on_map_border"
-    tag_list = {}
-    tag_list["boundary"] = "map_inner"
-    tag_list["contour_ext"] = "elevation_major"
+        # write separate way for each poly segment to avoid cubic interpolation
+        i = 0
+        way_id = -len(nodes)
+        while (i < len(nodes)-1):
+            way_id = write_way(writer, way_id, nodes[i:i+2], tag_list)
+            i += 1
 
-    # write separate way for each poly segment to avoid cubic interpolation
-    i = 0
-    way_id = -len(nodes)
-    while (i < len(nodes)-1):
-        way_id = write_way(writer, way_id, nodes[i:i+2], tag_list)
-        i += 1
 
-    writer.close()
-
-    print("    %s seconds" % round((time.time() - start_time), 1))
+def run(map_, file_out):
+    start_time = time.time()
+    try:
+        create_map_border(map_, file_out)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        logging.info(f"{round((time.time() - start_time), 1)} seconds")
