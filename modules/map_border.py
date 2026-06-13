@@ -5,8 +5,7 @@ import time
 import modules.functions as functions
 import logging
 
-# Konfiguriere das Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 def write_way(writer, i, n, tl):
     w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
