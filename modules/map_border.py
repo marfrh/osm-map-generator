@@ -28,10 +28,6 @@ def write_node(writer, i, loc, tl={}):
 def create_map_border(map_, file_out):
     polygon = "polygons/" + map_["name"] + ".poly"
 
-    if os.path.exists(file_out):
-        logging.info(f"File {file_out} already exists.")
-        return
-
     with osmium.SimpleWriter(file_out) as writer:
         # use polygon as map border
         if map_["use_polygon_shape"]:
@@ -71,9 +67,14 @@ def create_map_border(map_, file_out):
 
 def run(map_, file_out):
     start_time = time.time()
+
+    if os.path.exists(file_out):
+        logging.info(f"    File {file_out} already exists.")
+        return
+
     try:
         create_map_border(map_, file_out)
     except Exception as e:
         logging.error(f"An error occurred: {e}")
     finally:
-        logging.info(f"{round((time.time() - start_time), 1)} seconds")
+        logging.info(f"    {round((time.time() - start_time), 1)} seconds")

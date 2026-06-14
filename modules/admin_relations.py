@@ -72,7 +72,7 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        logging.info(f"File {file_out} already exists.")
+        logging.info(f"    File {file_out} already exists.")
         return
 
     temp_file = "tmp/temp_admin_ways.pbf"
@@ -105,4 +105,4 @@ def run(file_in, map_, file_out):
 
     os.remove(temp_file)
 
-    logging.info(f"{round((time.time() - start_time), 1)} seconds")
+    logging.info(f"    {round((time.time() - start_time), 1)} seconds")
