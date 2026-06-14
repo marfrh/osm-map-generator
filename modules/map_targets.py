@@ -193,7 +193,7 @@ map_targets[t["name"]] = t
 # Wales
 # Test map with os-open-data crags
 t = default_map_dict.copy()
-src = "https://download.geofabrik.de/europe/great-britain/wales-latest.osm.pbf"
+src = "https://download.geofabrik.de/europe/united-kingdom/wales-latest.osm.pbf"
 t["name"] = "Wales"
 t["source"] = src
 t["has_sea"] = True
