@@ -6,11 +6,14 @@ import zipfile
 
 import modules.esri_shp_to_osm as shp_to_osm
 import modules.functions as functions
+import logging
 
 start_rel_id = -80000000000
 start_way_id = -80000000000
 start_node_id = -80000000000
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 # convert EPSG_27700 file to WGS_84 via ogr2ogr
 def EPSG_27700_to_WGS_84(file_in, file_out):
@@ -27,8 +30,11 @@ def EPSG_27700_to_WGS_84(file_in, file_out):
            "-t_srs " + t_srs + " -s_srs " + s_srs + " "
            + file_out + " " + file_in + " "
            ">/dev/null 2>&1")
-    os.system(cmd)
-
+    try:
+        os.system(cmd)
+    except Exception as e:
+        logging.error("Error executing command: %s" % e)
+        sys.exit()
 
 # check if two ranges overlap each other
 def ranges_overlap(a1, a2, b1, b2):
@@ -42,7 +48,6 @@ def ranges_overlap(a1, a2, b1, b2):
         return True
     else:
         return False
-
 
 # check if shape file overlaps with polygon bounding box
 def shp_is_relevant_for_poly_bb(poly, f):
@@ -61,7 +66,6 @@ def shp_is_relevant_for_poly_bb(poly, f):
 
     return False
 
-
 # wrapper function to call shp to osm converson with continuous osm ids
 def convert_WGS84_shp_to_osm(file_set, file_out):
     if os.path.exists(file_out):
@@ -76,10 +80,13 @@ def convert_WGS84_shp_to_osm(file_set, file_out):
     tl["os_open_data"] = "crags"
 
     for f in file_set:
-        i_w, i_n, i_r = shp_to_osm.shp_to_osm(writer, f, i_r, i_w, i_n, tl)
+        try:
+            i_w, i_n, i_r = shp_to_osm.shp_to_osm(writer, f, i_r, i_w, i_n, tl)
+        except Exception as e:
+            logging.error("Error processing file %s: %s" % (f, e))
+            sys.exit()
 
     writer.close()
-
 
 # Download source data and/or extract zip file if necessary. Delete
 # unnecessary data.
@@ -91,7 +98,11 @@ def download_and_convert_source_data(folder):
     target = folder + "vmdvec_essh_gb.zip"
     if not os.path.exists(folder + "readme.txt"):
         if not os.path.exists(target):
-            functions.wget(src, target)
+            try:
+                functions.wget(src, target)
+            except Exception as e:
+                logging.error("Error downloading source data: %s" % e)
+                sys.exit()
 
         # extract data
         with zipfile.ZipFile(target, 'r') as zip_ref:
@@ -105,7 +116,7 @@ def download_and_convert_source_data(folder):
 
         os.remove(target)
     else:
-        print("    Use existing crag source data files.")
+        logging.info("    Use existing crag source data files.")
 
     # Convert all shp files to WGS84, remember the converted files in a set
     file_set = set()
@@ -118,7 +129,11 @@ def download_and_convert_source_data(folder):
                 file_set.add(file_temp)
                 f_WGS84 = file_temp[:-4] + "_WGS84.shp"
                 if not os.path.exists(f_WGS84):
-                    EPSG_27700_to_WGS_84(file_temp, f_WGS84)
+                    try:
+                        EPSG_27700_to_WGS_84(file_temp, f_WGS84)
+                    except Exception as e:
+                        logging.error("Error converting file %s to WGS84: %s" % (file_temp, e))
+                        sys.exit()
                 file_set_WGS84.add(f_WGS84)
 
             # take existing file
@@ -127,19 +142,22 @@ def download_and_convert_source_data(folder):
 
     return file_set, file_set_WGS84
 
-
 def run(folder, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
     use_polygon_shape = map_["use_polygon_shape"]
     polygon = "polygons/" + map_["name"] + ".poly"
 
     if not os.path.isdir(folder):
-        os.makedirs(folder)
+        try:
+            os.makedirs(folder)
+        except Exception as e:
+            logging.error("Error creating directory %s: %s" % (folder, e))
+            sys.exit()
 
     file_set, file_set_WGS84 = download_and_convert_source_data(folder)
 
@@ -148,7 +166,11 @@ def run(folder, map_, file_out):
         for f_type in ["shp", "dbf", "prj", "shx"]:
             f_temp = f[:-3] + f_type
             if os.path.exists(f_temp):
-                os.remove(f_temp)
+                try:
+                    os.remove(f_temp)
+                except Exception as e:
+                    logging.error("Error removing file %s: %s" % (f_temp, e))
+                    sys.exit()
 
     # Get set of shp files that are relevant for the area of interest.
     file_set_target = set()
@@ -171,8 +193,12 @@ def run(folder, map_, file_out):
                 "bottom=" + str(min_y) + " right=" + str(max_x) + " ")
     cmd += ("clipIncompleteEntities=true "
             "--wb " + file_out + " omitmetadata=true")
-    os.system(cmd)
+    try:
+        os.system(cmd)
+    except Exception as e:
+        logging.error("Error executing command: %s" % e)
+        sys.exit()
 
     os.remove(temp_crag_data)
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))
