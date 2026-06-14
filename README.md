@@ -3,15 +3,15 @@ Python script to create mapsforge vector maps compatible to [OpenAndroMaps](http
 
 ## Disclaimer
 - This tool has no affiliation with the OpenAndroMaps project and is not meant to compete with the project in any way. It is intended as a playground and knowledge documentation.
-- Due to the complex nature of the data/topic and the used tools, I'm not able to provide support. If map targets fail or if any of the tools crash, please refer the individual projects and documentations (see [Dependencies](https://github.com/marfrh/osm-map-generator#dependencies)).
+- Due to the complex nature of the data/topic and the used tools, I'm not able to provide support. If map targets fail or if any of the tools crash, please refer to the individual projects and documentations (see [Dependencies](#dependencies)).
 
 ## Contents
-- [Hardware Requirements](https://github.com/marfrh/osm-map-generator#hardware-requirements)
-- [Dependencies](https://github.com/marfrh/osm-map-generator#dependencies)
-- [Installation](https://github.com/marfrh/osm-map-generator#installation)
-- [Usage](https://github.com/marfrh/osm-map-generator#usage)
-- [Advanced Usage](https://github.com/marfrh/osm-map-generator#advanced-usage)
-- [Implementation Details](https://github.com/marfrh/osm-map-generator#implementation-details)
+- [Hardware Requirements](#hardware-requirements)
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Advanced Usage](#advanced-usage)
+- [Implementation Details](#implementation-details)
 
 ## Hardware Requirements
 Tested with 32GB RAM.
@@ -37,22 +37,22 @@ In the current state, osm-map-generator will only work in a Linux environment as
 > For pyhgtmap, it is recommended to add the relevant repository and install pyhgtmap without recommended packages, e.g. for Python 3.11: `sudo zypper install --no-recommends python311-pyhgtmap`
 
 ## Installation
-1. Install and prepare [Dependencies](https://github.com/marfrh/osm-map-generator#dependencies).
+1. Install and prepare [Dependencies](#dependencies).
 2. `git clone https://github.com/marfrh/osm-map-generator.git` or download & extract zip file.
 
 ## Usage
 1. Define a map target in `modules/map_targets.py` or use one of the examples.
    <br> See `default_map_dict` and `contour1` / `contour3` / `contour1_custom` for available settings.
-   <br>Attention: The examples `Loro_Ciuffenna`, `Canary_Islands`, `Alps` and `Italy` rely on [custom hgt files](https://github.com/marfrh/osm-map-generator#use-of-custom-hgt-files).
-3. Make sure a polygon file (`.poly`) with the same name as the map target is placed in folder `polygons/`. This is true for all provided examples. [Polygon Files](https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format) can be created with JOSM. Currently, `osm-map-generator` only works with `.poly` files that contain only one polygon.
-5. Run `./osm-map-generator map_name result.map`.
+   <br>Attention: The examples `Loro_Ciuffenna`, `Canary_Islands`, `Alps` and `Italy` rely on [custom hgt files](#use-of-custom-hgt-files).
+2. Make sure a polygon file (`.poly`) with the same name as the map target is placed in folder `polygons/`. This is true for all provided examples. [Polygon Files](https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format) can be created with JOSM. Currently, `osm-map-generator` only works with `.poly` files that contain only one polygon.
+3. Run `./osm-map-generator map_name result.map`.
    <br>Option `-p` exists to use the osm planet file as source, option `-k` keeps intermediate results and the final map data osm file.
    <br>See `./osm-map-generator --help` for usage details.
 
 > [!NOTE]
 > For a quick test, try map target `Alleghe`. Running `./osm-map-generator Alleghe Alleghe.map` on a Ryzen Pro 7 8650U Laptop (32GB RAM, 50 Mbit fiber connection, limit to 6 threads) takes ~3-4 minutes.
 > 
-> For a full test, try `Wales` as it includes all possible data sources. Running `./osm-map-generator Wales Wales.map` on a Ryzen 7 Pro 8650U Laptop (32GB RAM, 50 Mbit fiber connection, limit to 6 threads) takes ~30 minutes. ~27 min for data downloads / extraction / conversions, ~3 min for tag-mapping and map-writer.
+> For a full test, try `Wales` as it includes all possible data sources. Running `./osm-map-generator Wales Wales.map` on a Ryzen Pro 7 8650U Laptop (32GB RAM, 50 Mbit fiber connection, limit to 6 threads) takes ~30 minutes. ~27 min for data downloads / extraction / conversions, ~3 min for tag-mapping and map-writer.
 
 
 ## Advanced Usage
@@ -89,11 +89,15 @@ The following measures were applied to achieve a fast map creation process:
   - In addition to some predefined key/value combinations, every way/relation without relevant keys is being deleted.
   - Relevant keys are taken from map theme / tag-mapping.xml.
   - This step leads to a huge improvement in `mapsforge-map-writer` rendering time (Example for whole Italy: `reduce_data.py` processing time <5 minutes, rendering time without data reduction ~14h, with data reduction <5h, -66%).
-- Optional [Land polygon grid split](https://github.com/marfrh/osm-map-generator#land-polygon-grid-split) that can save a small amount of rendering time.
+- Optional [Land polygon grid split](#land-polygon-grid-split) that can save a small amount of rendering time.
 - In case of custom hgt files, only pass possibly relevant hgt tiles to pyhgtmap. This saves a lot of time as custom hgt folders can contain many files.
 
+> [!WARNING]
+> `osmfilter` does not work with negative osm ids. Any filtering needs to be done before merging objects with negative ids.
+
+
 ### OSM ID ranges
-Each object which is not part of the osm source data (e.g. newly created poly labels, contour lines, ...) needs an `osm id`. Negative ids are easy to handle as the don't collide with real osm ids. `osm-map-generator` uses the following id ranges / offsets:
+Each object which is not part of the osm source data (e.g. newly created poly labels, contour lines, ...) needs an `osm id`. Negative ids are easy to handle as they don't collide with real osm ids. `osm-map-generator` uses the following id ranges / offsets:
 Object category | Start osm id | Increment 
 ---|---|---
 Map border | nodes -1 <br> ways = -1 | -1
