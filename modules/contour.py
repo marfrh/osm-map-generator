@@ -2,11 +2,14 @@ import glob
 import os
 import sys
 import time
+import logging
 
 import modules.functions as functions
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-# Adapt corrdinates to hgt grid. Example:
+# Adapt coordinates to hgt grid. Example:
 # -14.1 --> -15
 #  14.1 -->  14
 def coord_to_int(coord):
@@ -84,10 +87,10 @@ def run(map_, file_out):
     temp_poly = "tmp/temp_poly.poly"
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
-    prefix = "tmp/rc_"+map_["name"]
+    prefix = "tmp/rc_" + map_["name"]
     hgt_dir = "tmp/hgt/"
     config = map_["contour"]
 
@@ -115,7 +118,7 @@ def run(map_, file_out):
         # necessary to cover the map polygon's bounding box.
         hgt_tile_set = get_hgt_tile_set(polygon, custom_dir)
         if not hgt_tile_set:
-            print("Error: custom hgt tiles are missing.")
+            logging.error("Error: custom hgt tiles are missing.")
             sys.exit()
 
         cmd += "--polygon=" + polygon + " "
@@ -153,15 +156,19 @@ def run(map_, file_out):
 
     cmd += ">/dev/null 2>&1"
 
-    os.system(cmd)
+    try:
+        os.system(cmd)
+    except Exception as e:
+        logging.error("Error executing command: %s" % e)
+        sys.exit()
 
     # rename for handling with osmconvert (has problems with wildcard * when
     # called from python)
-    for fn in glob.glob(prefix+"*"):
+    for fn in glob.glob(prefix + "*"):
         os.rename(fn, file_out)
 
     # remove temporary file, exists only in case of custom hgt tiles
     if os.path.exists(temp_poly):
         os.remove(temp_poly)
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))
