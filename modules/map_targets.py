@@ -98,7 +98,7 @@ map_targets[t["name"]] = t
 
 # Great_Britain
 t = default_map_dict.copy()
-src = "https://download.geofabrik.de/europe/great-britain-latest.osm.pbf"
+src = "https://download.geofabrik.de/europe/united-kingdom-latest.osm.pbf"
 t["name"] = "Great_Britain"
 t["source"] = src
 t["has_sea"] = True

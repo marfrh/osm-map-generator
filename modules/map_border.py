@@ -5,24 +5,34 @@ import time
 import modules.functions as functions
 import logging
 
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
+
 def write_way(writer, i, n, tl):
-    w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
-                                   changeset=1,
-                                   timestamp="1970-01-01T00:59:59Z", uid=1,
-                                   user="", tags=tl)
-    writer.add_way(w)
-    return i + 1
+    try:
+        w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
+                                       changeset=1,
+                                       timestamp="1970-01-01T00:59:59Z", uid=1,
+                                       user="", tags=tl)
+        writer.add_way(w)
+        return i + 1
+    except Exception as e:
+        logging.error(f"Error in write_way: {e}")
+        raise
 
 
 def write_node(writer, i, loc, tl={}):
-    n = osmium.osm.Node("").replace(id=int(i), location=loc,
-                                    version=1, visible=True, changeset=1,
-                                    timestamp="1970-01-01T00:59:59Z",
-                                    uid=1, user="", tags=tl)
-    writer.add_node(n)
-    return i + 1
+    try:
+        n = osmium.osm.Node("").replace(id=int(i), location=loc,
+                                        version=1, visible=True, changeset=1,
+                                        timestamp="1970-01-01T00:59:59Z",
+                                        uid=1, user="", tags=tl)
+        writer.add_node(n)
+        return i + 1
+    except Exception as e:
+        logging.error(f"Error in write_node: {e}")
+        raise
 
 
 def create_map_border(map_, file_out):
@@ -75,6 +85,6 @@ def run(map_, file_out):
     try:
         create_map_border(map_, file_out)
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logging.error(f"Error in create_map_border: {e}")
     finally:
         logging.info(f"    {round((time.time() - start_time), 1)} seconds")

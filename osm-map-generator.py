@@ -28,77 +28,77 @@ def run(map_name, result_map, use_planet, keep_temp, delete_source):
     map_ = map_targets.map_targets[map_name]
     tmp_files = set()
 
-    logging.info("\n*** Download osm source file")
+    logging.info("\n*** Downloading OSM source file")
     data_source = functions.download_osm_source(map_, use_planet)
 
-    logging.info("\n*** Download auxiliary sources (tag-transform/tag-mapping/...)")
+    logging.info("\n*** Downloading auxiliary sources (tag-transform/tag-mapping/...)")
     functions.download_auxiliary_sources()
 
-    logging.info("\n*** Extract area of interest")
+    logging.info("\n*** Extracting area of interest")
     data_extracted = "tmp/" + map_["name"] + "_extr.o5m"
     functions.extract_target_area(data_source, map_, data_extracted)
     tmp_files.add(data_extracted)
 
-    logging.info("\n*** Remove unnecessary tags")
+    logging.info("\n*** Removing unnecessary tags")
     data_filtered = "tmp/" + map_["name"] + "_extr_filt.pbf"
     functions.filter_data(data_extracted, map_, data_filtered)
     tmp_files.add(data_filtered)
 
-    logging.info("\n*** Create map border")
+    logging.info("\n*** Creating map border")
     map_border_ways = "tmp/" + map_["name"] + "_map_border.osm"
     map_border.run(map_, map_border_ways)
     tmp_files.add(map_border_ways)
 
-    logging.info("\n*** Resolve admin relations")
+    logging.info("\n*** Resolving admin relations")
     admin_ways = "tmp/" + map_["name"] + "_admin_ways.pbf"
     admin_relations.run(data_filtered, map_, admin_ways)
     tmp_files.add(admin_ways)
 
-    logging.info("\n*** Create and filter polygon label nodes")
+    logging.info("\n*** Creating and filtering polygon label nodes")
     poly_label_nodes = "tmp/" + map_["name"] + "_poly_label_nodes.pbf"
     poly_nodes.run(data_extracted, map_, poly_label_nodes)
     tmp_files.add(poly_label_nodes)
 
-    logging.info("\n*** Add Peak distance and saddle direction tag")
+    logging.info("\n*** Adding peak distance and saddle direction tags")
     peak_saddle_nodes = "tmp/" + map_["name"] + "_peaks_saddles.pbf"
     peaks_saddles.run(data_extracted, map_, peak_saddle_nodes)
     tmp_files.add(peak_saddle_nodes)
 
-    logging.info("\n*** Add popcat tag to place-nodes")
+    logging.info("\n*** Adding popcat tags to place nodes")
     popcat_nodes = "tmp/" + map_["name"] + "_popcat_nodes.pbf"
     places_popcat.run(data_extracted, map_, popcat_nodes)
     tmp_files.add(popcat_nodes)
 
-    logging.info("\n*** Split pistes from ways and resolve piste relations")
+    logging.info("\n*** Splitting pistes from ways and resolving piste relations")
     piste_ways = "tmp/" + map_["name"] + "_pistes.pbf"
     pistes.run(data_filtered, map_, piste_ways)
     tmp_files.add(piste_ways)
 
-    logging.info("\n*** Merge first set of data and perform tag-transform")
+    logging.info("\n*** Merging first set of data and performing tag-transform")
     data_tag_transformed = "tmp/" + map_["name"] + "_tt.pbf"
     file_list = [poly_label_nodes, popcat_nodes, peak_saddle_nodes,
                  data_filtered]
     functions.merge_map_and_tt(file_list, data_tag_transformed, False)
     tmp_files.add(data_tag_transformed)
 
-    logging.info("\n*** Process routes")
+    logging.info("\n*** Processing routes")
     route_ways = "tmp/" + map_["name"] + "_route_ways.pbf"
     routes.run(data_tag_transformed, map_, route_ways)
     tmp_files.add(route_ways)
 
-    logging.info("\n*** Download and prepare contour lines")
+    logging.info("\n*** Downloading and preparing contour lines")
     contour_ways = "tmp/"+map_["name"] + "_contour_ways.pbf"
     contour.run(map_, contour_ways)
     tmp_files.add(contour_ways)
 
     if map_["has_sea"]:
-        logging.info("\n*** Prepare land and sea")
+        logging.info("\n*** Preparing land and sea")
         land_sea_polys = "tmp/" + map_["name"] + "_land_sea.pbf"
         land_sea.run(map_, land_sea_polys)
         tmp_files.add(land_sea_polys)
 
     if map_["has_crags"]:
-        logging.info("\n*** Prepare crags based on OS Open Data. On first run, "
+        logging.info("\n*** Preparing crags based on OS Open Data. On the first run, "
               "this may take a while.")
         crag_polys = "tmp/" + map_["name"] + "_crags.pbf"
         crags.run("tmp/os_open_data/", map_, crag_polys)
@@ -106,7 +106,7 @@ def run(map_name, result_map, use_planet, keep_temp, delete_source):
 
     # Routes and pistes are not included in input file.
     # They are checked against the 15 tag limit in their subroutines.
-    logging.info("\n*** Reduce data for mapwriter performance and check tag limit")
+    logging.info("\n*** Reducing data for mapwriter performance and checking tag limit")
     osm_ids_to_subtract = "tmp/" + map_["name"] + "_ids_to_subtract.pbf"
     tag_limit_ways = "tmp/" + map_["name"] + "_tag_limit.pbf"
     reduce_data.run(data_tag_transformed, osm_ids_to_subtract, tag_limit_ways)
@@ -115,7 +115,7 @@ def run(map_name, result_map, use_planet, keep_temp, delete_source):
     # A different file sequence is necessary for osmosis / osmconvert (osmosis
     # gives priority to the first input file, osmconvert to the last input
     # file, if objects have the same osm id/no version
-    logging.info("\n*** Merge final map including contourlines and land/sea")
+    logging.info("\n*** Merging final map including contour lines and land/sea")
     data_map = "tmp/" + map_["name"] + "_data_map.pbf"
     file_list_osmconvert = [data_tag_transformed, route_ways, admin_ways,
                             piste_ways, tag_limit_ways, map_border_ways,
@@ -128,15 +128,15 @@ def run(map_name, result_map, use_planet, keep_temp, delete_source):
                                    data_map)
     tmp_files.add(data_map)
 
-    logging.info("\n*** Apply tag mapping and produce final map")
+    logging.info("\n*** Applying tag mapping and producing final map")
     functions.start_mapwriter(data_map, map_, result_map)
 
     if not keep_temp:
-        logging.info("\n*** Remove temporary files")
+        logging.info("\n*** Removing temporary files")
         functions.remove_files(tmp_files)
 
     if delete_source:
-        logging.info("\n*** Delete source file")
+        logging.info("\n*** Deleting source file")
         functions.remove_files([data_source])
 
     logging.info("\n*** Finished.")

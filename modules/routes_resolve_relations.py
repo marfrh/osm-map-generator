@@ -553,8 +553,8 @@ class process_osmc_nodes(osmium.SimpleHandler):
             # intersection of ways.) In this unlikely case only the first
             # symbol is created, so issue a warning here.
             if len(self.osmc_nodes_hk[n.id]) > 1:
-                print("    Warning, at least one duplicate osmc-symbol "
-                      "ignored: %d" % n.id)
+                logging.info("    Warning, at least one duplicate osmc-symbol "
+                             "ignored: %d" % n.id)
 
             # prepare tag list and add osmc tags
             tag_list = {}

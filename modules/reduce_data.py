@@ -1,6 +1,10 @@
+import logging
 import osmium
 import os
 import time
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 # redlist of tags to remove if a way exceeds the mapsforge 15 tags limit
 redlist = ["mtb_scale_imba", "surface", "ref", "trail_visibility", "foot",
@@ -216,26 +220,32 @@ class collect_data_and_limit_tags(osmium.SimpleHandler):
 
 # pass an empty way with id w_id to the writer
 def write_empty_way(writer, w_id):
-    w = osmium.osm.Way("").replace(id=w_id, nodes=[], version=1, visible=True,
-                                   changeset=1,
-                                   timestamp="1970-01-01T00:59:59Z", uid=1,
-                                   user="", tags=[])
-    writer.add_way(w)
+    try:
+        w = osmium.osm.Way("").replace(id=w_id, nodes=[], version=1, visible=True,
+                                       changeset=1,
+                                       timestamp="1970-01-01T00:59:59Z", uid=1,
+                                       user="", tags=[])
+        writer.add_way(w)
+    except Exception as e:
+        logging.error("Error writing empty way %d: %s" % (w_id, str(e)))
 
 
 # pass an empty relation with osm id r_id to the writer
 def write_empty_relation(writer, r_id):
-    r = osmium.osm.Relation("").replace(id=r_id, members=[], version=1,
-                                        visible=True, changeset=1,
-                                        timestamp="1970-01-01T00:59:59Z",
-                                        uid=1, user="", tags=[])
-    writer.add_relation(r)
+    try:
+        r = osmium.osm.Relation("").replace(id=r_id, members=[], version=1,
+                                            visible=True, changeset=1,
+                                            timestamp="1970-01-01T00:59:59Z",
+                                            uid=1, user="", tags=[])
+        writer.add_relation(r)
+    except Exception as e:
+        logging.error("Error writing empty relation %d: %s" % (r_id, str(e)))
 
 
 def run(file_in, file_out_subtract, file_out_limit):
     if os.path.exists(file_out_subtract) and os.path.exists(file_out_limit):
-        print("    Files %s and %s already exists."
-              % (file_out_subtract, file_out_limit))
+        logging.info("    Files %s and %s already exists."
+                     % (file_out_subtract, file_out_limit))
         return
 
     start_time = time.time()
@@ -245,18 +255,29 @@ def run(file_in, file_out_subtract, file_out_limit):
     theme1 = "themes/Elevate/Elevate.xml"
     theme2 = "themes/Elevate/Elements.xml"
 
-    # read relevant osm keys from tag-mapping and map themes
-    key_set = read_osm_tag_keys(tm1, tm2, theme1, theme2)
-    key_set.remove("bBoxWeight")
+    try:
+        # read relevant osm keys from tag-mapping and map themes
+        key_set = read_osm_tag_keys(tm1, tm2, theme1, theme2)
+        key_set.remove("bBoxWeight")
+    except Exception as e:
+        logging.error("Error reading osm keys: %s" % str(e))
+        return
 
-    if os.path.exists(file_out_limit):
-        os.remove(file_out_limit)
-    writer_limit = osmium.SimpleWriter(file_out_limit)
+    try:
+        if os.path.exists(file_out_limit):
+            os.remove(file_out_limit)
+    except Exception as e:
+        logging.error("Error removing previous output file: %s" % str(e))
+        return
 
-    # collect data
-    cd = collect_data_and_limit_tags(threshold, writer_limit, key_set)
-    cd.apply_file(file_in)
-    writer_limit.close()
+    try:
+        writer_limit = osmium.SimpleWriter(file_out_limit)
+        cd = collect_data_and_limit_tags(threshold, writer_limit, key_set)
+        cd.apply_file(file_in)
+        writer_limit.close()
+    except Exception as e:
+        logging.error("Error processing reduce data: %s" % str(e))
+        return
 
     # Exit here if file_out_subtract is not needed. Don't print elapsed
     # time because in this case only the tag limit part is used as part of
@@ -277,28 +298,44 @@ def run(file_in, file_out_subtract, file_out_limit):
             break
 
     # prepare output file
-    temp_file_subtract = "tmp/temp_subtract.pbf"
-    if os.path.exists(temp_file_subtract):
-        os.remove(temp_file_subtract)
-    writer = osmium.SimpleWriter(temp_file_subtract)
+    try:
+        temp_file_subtract = "tmp/temp_subtract.pbf"
+        if os.path.exists(temp_file_subtract):
+            os.remove(temp_file_subtract)
+    except Exception as e:
+        logging.error("Error removing previous output file: %s" % str(e))
+        return
 
-    for w in del_ways2:
-        write_empty_way(writer, w)
-    print("    %d ways deleted" % len(del_ways2))
+    try:
+        writer = osmium.SimpleWriter(temp_file_subtract)
 
-    del_rels = cd.del_rels
-    del_rels.update(cd.del_rels_with_relevant_ways)
+        for w in del_ways2:
+            write_empty_way(writer, w)
+        logging.info("    %d ways deleted" % len(del_ways2))
 
-    for r_id in del_rels:
-        write_empty_relation(writer, r_id)
-    print("    %d relations deleted" % len(del_rels))
+        del_rels = cd.del_rels
+        del_rels.update(cd.del_rels_with_relevant_ways)
 
-    writer.close()
+        for r_id in del_rels:
+            write_empty_relation(writer, r_id)
+        logging.info("    %d relations deleted" % len(del_rels))
+
+        writer.close()
+    except Exception as e:
+        logging.error("Error during deletion of ways and relations: %s" % str(e))
+        return
 
     # temp file is not sorted yet --> sort
     cmd = "osmosis -q --rbf " + temp_file_subtract + " --s --wb "
     cmd += file_out_subtract
-    os.system(cmd)
-    os.remove(temp_file_subtract)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    try:
+        os.remove(temp_file_subtract)
+    except Exception as e:
+        logging.warning("Warning removing temp files: %s" % str(e))
+
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))

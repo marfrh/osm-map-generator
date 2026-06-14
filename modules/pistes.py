@@ -1,8 +1,12 @@
+import logging
 import osmium
 import os
 import time
 
 import modules.reduce_data as reduce_data
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 tag_set = {"route", "piste:type", "piste:grooming", "piste:oneway",
            "piste:difficulty", "piste:ref", "piste:name"}
@@ -95,7 +99,7 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
     cpr = Collect_Piste_Rels()
@@ -103,18 +107,28 @@ def run(file_in, map_, file_out):
 
     temp_file = "tmp/temp_pistes.pbf"
 
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
-    writer = osmium.SimpleWriter(temp_file)
+    try:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+    except Exception as e:
+        logging.error("Error removing previous output file: %s" % str(e))
+        return
 
-    ppw = Process_Piste_Ways(cpr.way_rels, writer)
-    ppw.apply_file(file_in)
-
-    writer.close()
+    try:
+        writer = osmium.SimpleWriter(temp_file)
+        ppw = Process_Piste_Ways(cpr.way_rels, writer)
+        ppw.apply_file(file_in)
+        writer.close()
+    except Exception as e:
+        logging.error("Error processing pistes data: %s" % str(e))
+        return
 
     temp_file_sorted = "tmp/temp_pistes_sorted.pbf"
     cmd = "osmosis -q --rbf " + temp_file + " --s --wb " + temp_file_sorted
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # check tag limit
     temp_pistes_limit = "tmp/temp_pistes_tags_limited.pbf"
@@ -125,10 +139,16 @@ def run(file_in, map_, file_out):
     cmd = ("osmconvert " + temp_file_sorted + " "
            "| osmconvert - " + temp_pistes_limit + " "
            "--drop-version -o=" + file_out)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
-    os.remove(temp_file)
-    os.remove(temp_file_sorted)
-    os.remove(temp_pistes_limit)
+    try:
+        os.remove(temp_file)
+        os.remove(temp_file_sorted)
+        os.remove(temp_pistes_limit)
+    except Exception as e:
+        logging.warning("Warning removing temp files: %s" % str(e))
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))

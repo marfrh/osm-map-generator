@@ -1,5 +1,9 @@
+import logging
 import osmium
 import os
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 # parameters to calculate the grid size for each polygon
 size_x_min = 0.034
@@ -883,27 +887,36 @@ def write_land_way(writer, i, n):
 
 
 def write_way(writer, i, n, tl):
-    w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
-                                   changeset=1,
-                                   timestamp="1970-01-01T00:59:59Z", uid=1,
-                                   user="", tags=tl)
-    writer.add_way(w)
+    try:
+        w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
+                                       changeset=1,
+                                       timestamp="1970-01-01T00:59:59Z", uid=1,
+                                       user="", tags=tl)
+        writer.add_way(w)
+    except Exception as e:
+        logging.error(f"Error writing way {i}: {e}")
 
 
 def write_node(writer, i, loc):
-    n = osmium.osm.Node("").replace(id=int(i), location=[loc.x, loc.y],
-                                    version=1, visible=True, changeset=1,
-                                    timestamp="1970-01-01T00:59:59Z",
-                                    uid=1, user="", tags=[])
-    writer.add_node(n)
+    try:
+        n = osmium.osm.Node("").replace(id=int(i), location=[loc.x, loc.y],
+                                        version=1, visible=True, changeset=1,
+                                        timestamp="1970-01-01T00:59:59Z",
+                                        uid=1, user="", tags=[])
+        writer.add_node(n)
+    except Exception as e:
+        logging.error(f"Error writing node {i}: {e}")
 
 
 def run(file_in, file_out):
-    if os.path.exists(file_out):
-        os.remove(file_out)
-    writer = osmium.SimpleWriter(file_out)
+    try:
+        if os.path.exists(file_out):
+            os.remove(file_out)
+        writer = osmium.SimpleWriter(file_out)
 
-    cd = collect_data(writer, start_node_id, start_way_id)
-    cd.apply_file(file_in)
+        cd = collect_data(writer, start_node_id, start_way_id)
+        cd.apply_file(file_in)
 
-    writer.close()
+        writer.close()
+    except Exception as e:
+        logging.error(f"Error in run function: {e}")

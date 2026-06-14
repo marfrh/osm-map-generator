@@ -1,7 +1,11 @@
 import csv
+import logging
 import osmium
 import os
 import time
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 # Create popcat tag for nodes by using population tag or data from popcat_data.
@@ -91,7 +95,7 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
     # filter places nodes
@@ -99,23 +103,37 @@ def run(file_in, map_, file_out):
     cmd = ("osmfilter " + file_in + " "
            "--parameter-file=osmfilter_parameters/popcat_nodes.txt "
            "-o=" + tmp_file)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # read popcat data an transpose and convert to list
     file_popcat = "popcat_peaks_saddles/PopCatFile4OAM.csv"
-    f = open(file_popcat, mode="r", newline="\n")
-    reader = csv.reader(f, delimiter=';')
-    popcat_data = list(zip(*reader))
-    f.close()
+    try:
+        f = open(file_popcat, mode="r", newline="\n")
+        reader = csv.reader(f, delimiter=';')
+        popcat_data = list(zip(*reader))
+        f.close()
+    except Exception as e:
+        logging.error("Error reading popcat data file %s: %s" % (file_popcat, str(e)))
+        return
 
-    if os.path.exists(file_out):
-        os.remove(file_out)
-    writer = osmium.SimpleWriter(file_out)
+    try:
+        if os.path.exists(file_out):
+            os.remove(file_out)
+    except Exception as e:
+        logging.error("Error removing previous output file: %s" % str(e))
+        return
 
-    pn = process_nodes(writer, popcat_data)
-    pn.apply_file(tmp_file)
-    os.remove(tmp_file)
+    try:
+        writer = osmium.SimpleWriter(file_out)
+        pn = process_nodes(writer, popcat_data)
+        pn.apply_file(tmp_file)
+        os.remove(tmp_file)
+        writer.close()
+    except Exception as e:
+        logging.error("Error processing places data: %s" % str(e))
+        return
 
-    writer.close()
-
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))

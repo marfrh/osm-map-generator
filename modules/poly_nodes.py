@@ -1,7 +1,11 @@
+import logging
 import os
 import time
 
 import modules.functions as functions
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 # Create a single node for certain polygon categories and add a bboxweight
@@ -10,7 +14,7 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
     # Filter relevant polygon categories
@@ -18,7 +22,10 @@ def run(file_in, map_, file_out):
     cmd = ("osmfilter " + file_in + " "
            "--parameter-file=osmfilter_parameters/poly_labels.txt "
            "-o=" + temp_poly_data)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Apply tag-transform for name abbreviations and unifications
     temp_poly_data_tt = "tmp/temp_poly_data_tt.pbf"
@@ -29,7 +36,10 @@ def run(file_in, map_, file_out):
     cmd = ("osmconvert " + temp_poly_data_tt + " "
            "--add-bboxweight-tags "
            "-o=" + temp_bboxweight)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Convert to nodes
     # info: cannot apply --complete-multipolygons when reading standard input,
@@ -42,7 +52,10 @@ def run(file_in, map_, file_out):
            "--complete-multipolygons "
            "--drop-broken-refs "
            "-o=" + poly_nodes)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Filter building relations
     temp_building_relations = "tmp/temp_building_relations.o5m"
@@ -50,7 +63,10 @@ def run(file_in, map_, file_out):
            "--parameter-file="
            "osmfilter_parameters/building_relations_step_1.txt "
            "-o=" + temp_building_relations)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Convert building-multipolygon-relationens (with house number) to a node
     # with house number
@@ -62,7 +78,10 @@ def run(file_in, map_, file_out):
            "--complete-multipolygons "
            "--drop-broken-refs "
            "-o=" + temp_building_nodes)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Only keep nodes
     building_nodes_filt = "tmp/temp_building_nodes_filt.osm"
@@ -70,20 +89,29 @@ def run(file_in, map_, file_out):
            "--parameter-file="
            "osmfilter_parameters/building_relations_step_2.txt "
            "-o=" + building_nodes_filt)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     # Merge node categories
     cmd = ("osmconvert " + poly_nodes + " " + building_nodes_filt + " "
            "| osmconvert - " + temp_bboxweight + " "
            "--drop-version -o=" + file_out)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
-    os.remove(temp_poly_data)
-    os.remove(temp_poly_data_tt)
-    os.remove(poly_nodes)
-    os.remove(temp_building_relations)
-    os.remove(temp_building_nodes)
-    os.remove(building_nodes_filt)
-    os.remove(temp_bboxweight)
+    try:
+        os.remove(temp_poly_data)
+        os.remove(temp_poly_data_tt)
+        os.remove(poly_nodes)
+        os.remove(temp_building_relations)
+        os.remove(temp_building_nodes)
+        os.remove(building_nodes_filt)
+        os.remove(temp_bboxweight)
+    except Exception as e:
+        logging.warning("Warning removing temp files: %s" % str(e))
 
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))

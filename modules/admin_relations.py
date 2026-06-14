@@ -1,11 +1,11 @@
 import os
 import osmium
 import time
-
 import logging
 
-# Konfiguriere das Logging
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
+
 
 # Collect data for all admin relations with admin_level 1-4. other admin_level
 # relations will be deleted.
@@ -85,7 +85,10 @@ def run(file_in, map_, file_out):
         return
 
     if os.path.exists(temp_file):
-        os.remove(temp_file)
+        try:
+            os.remove(temp_file)
+        except OSError as e:
+            logging.error(f"Failed to remove file {temp_file}: {e}")
 
     try:
         with osmium.SimpleWriter(temp_file) as way_writer:
@@ -97,12 +100,14 @@ def run(file_in, map_, file_out):
 
     # sort output file
     cmd = f"osmosis -q --rbf {temp_file} --s --wb {file_out} omitmetadata=true"
-    try:
-        os.system(cmd)
-    except Exception as e:
-        logging.error(f"Error executing command: {cmd}: {e}")
+    result = os.system(cmd)
+    if result != 0:
+        logging.error(f"osmosis failed with exit code {result}")
         return
 
-    os.remove(temp_file)
+    try:
+        os.remove(temp_file)
+    except OSError as e:
+        logging.error(f"Failed to remove file {temp_file}: {e}")
 
     logging.info(f"    {round((time.time() - start_time), 1)} seconds")

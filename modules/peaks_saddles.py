@@ -1,7 +1,11 @@
 import csv
+import logging
 import osmium
 import os
 import time
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 # Attach pead dominance tag from peak_data to all peaks/vocanos and attach
@@ -72,40 +76,61 @@ def run(file_in, map_, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
-        print("    File %s already exists." % file_out)
+        logging.info("    File %s already exists." % file_out)
         return
 
     tmp_file = file_out[:-3] + "o5m"
     cmd = ("osmfilter " + file_in + " "
            "--parameter-file=osmfilter_parameters/peaks_saddles.txt "
            "-o=" + tmp_file)
-    os.system(cmd)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("os.system() failed for command: %s" % cmd)
+        return
 
     ti = "popcat_peaks_saddles/topographic_isolation_viefinderpanoramas.txt"
     sd = "popcat_peaks_saddles/saddledirection_viefinderpanoramas.100.txt"
 
     # read peaks and saddles input file and transpose and convert both to lists
-    f = open(ti, mode="r", newline="\n")
-    reader = csv.reader(filter(lambda row: row[0] != '#', f), delimiter=';')
-    # ID;LON;LAT;dominance
-    peak_data = list(zip(*reader))
-    f.close()
+    try:
+        f = open(ti, mode="r", newline="\n")
+        reader = csv.reader(filter(lambda row: row[0] != '#', f), delimiter=';')
+        # ID;LON;LAT;dominance
+        peak_data = list(zip(*reader))
+        f.close()
+    except Exception as e:
+        logging.error("Error reading peaks file %s: %s" % (ti, str(e)))
+        return
 
-    f = open(sd, mode="r", newline="\n")
-    reader = csv.reader(filter(lambda row: row[0] != '#', f), delimiter=';')
-    # ID;LON;LAT;direction
-    saddle_data = list(zip(*reader))
-    f.close()
+    try:
+        f = open(sd, mode="r", newline="\n")
+        reader = csv.reader(filter(lambda row: row[0] != '#', f), delimiter=';')
+        # ID;LON;LAT;direction
+        saddle_data = list(zip(*reader))
+        f.close()
+    except Exception as e:
+        logging.error("Error reading saddles file %s: %s" % (sd, str(e)))
+        return
 
-    if os.path.exists(file_out):
-        os.remove(file_out)
-    writer = osmium.SimpleWriter(file_out)
+    try:
+        if os.path.exists(file_out):
+            os.remove(file_out)
+    except Exception as e:
+        logging.error("Error removing previous output file: %s" % str(e))
+        return
 
-    peak_saddle_parser = process_peaks_saddles(writer, peak_data, saddle_data)
-    peak_saddle_parser.apply_file(tmp_file)
+    try:
+        writer = osmium.SimpleWriter(file_out)
+        peak_saddle_parser = process_peaks_saddles(writer, peak_data, saddle_data)
+        peak_saddle_parser.apply_file(tmp_file)
+        writer.close()
+    except Exception as e:
+        logging.error("Error processing OSM data: %s" % str(e))
+        return
 
-    writer.close()
+    try:
+        os.remove(tmp_file)
+    except Exception as e:
+        logging.warning("Warning removing temp file %s: %s" % (tmp_file, str(e)))
 
-    os.remove(tmp_file)
-
-    print("    %s seconds" % round((time.time() - start_time), 1))
+    logging.info("    %s seconds" % round((time.time() - start_time), 1))

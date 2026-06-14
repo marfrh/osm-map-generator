@@ -9,6 +9,7 @@ import modules.functions as functions
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
+
 # Adapt coordinates to hgt grid. Example:
 # -14.1 --> -15
 #  14.1 -->  14
@@ -156,10 +157,9 @@ def run(map_, file_out):
 
     cmd += ">/dev/null 2>&1"
 
-    try:
-        os.system(cmd)
-    except Exception as e:
-        logging.error("Error executing command: %s" % e)
+    result = os.system(cmd)
+    if result != 0:
+        logging.error("pyhgtmap failed with exit code %s" % result)
         sys.exit()
 
     # rename for handling with osmconvert (has problems with wildcard * when
@@ -168,7 +168,10 @@ def run(map_, file_out):
         os.rename(fn, file_out)
 
     # remove temporary file, exists only in case of custom hgt tiles
-    if os.path.exists(temp_poly):
-        os.remove(temp_poly)
+    try:
+        if os.path.exists(temp_poly):
+            os.remove(temp_poly)
+    except OSError as e:
+        logging.error(f"Failed to remove file {temp_poly}: {e}")
 
     logging.info("    %s seconds" % round((time.time() - start_time), 1))

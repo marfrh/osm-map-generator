@@ -1,47 +1,63 @@
 import os
 from osgeo import ogr, gdal
 import osmium
+import logging
 
 start_rel_id = -10000000000
 start_way_id = -10000000000
 start_node_id = -10000000000
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+
 
 def write_relation(writer, i, outer_ways, inner_ways, tl):
-    m = []
-    for w in outer_ways:
-        m.append(osmium.osm.RelationMember(w, "w", "outer"))
-    for w in inner_ways:
-        m.append(osmium.osm.RelationMember(w, "w", "inner"))
+    try:
+        m = []
+        for w in outer_ways:
+            m.append(osmium.osm.RelationMember(w, "w", "outer"))
+        for w in inner_ways:
+            m.append(osmium.osm.RelationMember(w, "w", "inner"))
 
-    mp_tag = {}
-    mp_tag["type"] = "multipolygon"
-    rel_tl = mp_tag | tl
+        mp_tag = {}
+        mp_tag["type"] = "multipolygon"
+        rel_tl = mp_tag | tl
 
-    r = osmium.osm.Relation("").replace(id=i, version=1, visible=True,
-                                        changeset=1,
-                                        timestamp="1970-01-01T00:59:59Z",
-                                        uid=1, user="", tags=rel_tl, members=m)
-    writer.add_relation(r)
-    return i + 1
+        r = osmium.osm.Relation("").replace(id=i, version=1, visible=True,
+                                            changeset=1,
+                                            timestamp="1970-01-01T00:59:59Z",
+                                            uid=1, user="", tags=rel_tl, members=m)
+        writer.add_relation(r)
+        return i + 1
+    except Exception as e:
+        logging.error(f"Error in write_relation: {e}")
+        raise
 
 
 def write_way(writer, i, n, tl):
-    w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
-                                   changeset=1,
-                                   timestamp="1970-01-01T00:59:59Z", uid=1,
-                                   user="", tags=tl)
-    writer.add_way(w)
-    return i + 1
+    try:
+        w = osmium.osm.Way("").replace(id=i, nodes=n, version=1, visible=True,
+                                       changeset=1,
+                                       timestamp="1970-01-01T00:59:59Z", uid=1,
+                                       user="", tags=tl)
+        writer.add_way(w)
+        return i + 1
+    except Exception as e:
+        logging.error(f"Error in write_way: {e}")
+        raise
 
 
 def write_node(writer, i, loc, tl={}):
-    n = osmium.osm.Node("").replace(id=int(i), location=loc,
-                                    version=1, visible=True, changeset=1,
-                                    timestamp="1970-01-01T00:59:59Z",
-                                    uid=1, user="", tags=tl)
-    writer.add_node(n)
-    return i + 1
+    try:
+        n = osmium.osm.Node("").replace(id=int(i), location=loc,
+                                        version=1, visible=True, changeset=1,
+                                        timestamp="1970-01-01T00:59:59Z",
+                                        uid=1, user="", tags=tl)
+        writer.add_node(n)
+        return i + 1
+    except Exception as e:
+        logging.error(f"Error in write_node: {e}")
+        raise
 
 
 def process_nodes(poly, i_n, writer):
@@ -59,7 +75,7 @@ def process_nodes(poly, i_n, writer):
 # http://en.wikipedia.org/wiki/Curve_orientation
 def poly_is_clockwise(poly):
     if poly.GetPointCount() < 4:
-        print("error")
+        logging.warning("Polygon has fewer than 4 points")
         return False
 
     # Find lowest rightmost node
@@ -113,6 +129,10 @@ def poly_is_clockwise(poly):
 def __shp_to_osm(writer, file_in, i_r, i_w, i_n, tl):
     ogr.DontUseExceptions()
     ds = ogr.Open(file_in)
+    if ds is None:
+        logging.error(f"Failed to open shapefile: {file_in}")
+        raise Exception("Could not open input file")
+
     layer = ds.GetLayer()
     feature = layer.GetNextFeature()
 
@@ -174,12 +194,21 @@ def shp_to_osm(writer, file_in, i_r, i_w, i_n, tl):
 
 
 def run(file_in, file_out, tag_list={}):
-    if os.path.exists(file_out):
-        os.remove(file_out)
+    try:
+        if os.path.exists(file_out):
+            os.remove(file_out)
+    except Exception as e:
+        logging.error(f"Error removing existing output file: {e}")
+        raise
+
     writer = osmium.SimpleWriter(file_out)
 
     i_r = start_rel_id
     i_w = start_way_id
     i_n = start_node_id
 
-    i_w, i_n, i_r = shp_to_osm(writer, file_in, i_r, i_w, i_n, tag_list)
+    try:
+        i_w, i_n, i_r = shp_to_osm(writer, file_in, i_r, i_w, i_n, tag_list)
+    except Exception as e:
+        logging.error(f"Error in run/shp_to_osm: {e}")
+        raise
