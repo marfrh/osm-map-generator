@@ -1,32 +1,10 @@
-from contextlib import contextmanager
 import os
-from osgeo import ogr
+from osgeo import ogr, gdal
 import osmium
-import sys
 
 start_rel_id = -10000000000
 start_way_id = -10000000000
 start_node_id = -10000000000
-
-
-@contextmanager
-def stderr_redirected(to=os.devnull):
-    fd = sys.stderr.fileno()
-
-    def _redirect_stderr(to):
-        sys.stderr.close()               # + implicit flush()
-        os.dup2(to.fileno(), fd)         # fd writes to 'to' file
-        sys.stderr = os.fdopen(fd, 'w')  # Python writes to fd
-
-    with os.fdopen(os.dup(fd), 'w') as old_stderr:
-        with open(to, 'w') as file:
-            _redirect_stderr(to=file)
-        try:
-            yield  # allow code to be run with the redirected stdout
-        finally:
-            # restore stdout.
-            # buffering and flags such as CLOEXEC may be different
-            _redirect_stderr(to=old_stderr)
 
 
 def write_relation(writer, i, outer_ways, inner_ways, tl):
@@ -186,11 +164,13 @@ def __shp_to_osm(writer, file_in, i_r, i_w, i_n, tl):
 
 
 def shp_to_osm(writer, file_in, i_r, i_w, i_n, tl):
-    # Redirect stderr to hide unnecessary error message from
-    # C-level function:
+    # Suppress GDAL/PROJ error messages such as:
     # "ERROR 1: PROJ: proj_identify: Cannot find proj.db"
-    with stderr_redirected():
+    gdal.PushErrorHandler("CPLQuietErrorHandler")
+    try:
         return __shp_to_osm(writer, file_in, i_r, i_w, i_n, tl)
+    finally:
+        gdal.PopErrorHandler()
 
 
 def run(file_in, file_out, tag_list={}):
