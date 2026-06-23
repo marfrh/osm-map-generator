@@ -8,8 +8,7 @@ import modules.esri_shp_to_osm as shp_to_osm
 import modules.land_sea_grid_split as land_grid_split
 import modules.functions as functions
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Replaces min/max lat/lon placeholders in template file and save
@@ -30,7 +29,7 @@ def insert_min_max_lat_long(template_path, result_path, coords):
             f.write(line)
         f.close()
     except Exception as e:
-        logging.error(f"Error in insert_min_max_lat_long: {e}")
+        logger.error(f"Error in insert_min_max_lat_long: {e}")
         raise
 
 
@@ -76,7 +75,7 @@ def run(map_, file_out):
                ">/dev/null 2>&1")
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"ogr2ogr failed with exit code {result}")
+            logger.error(f"ogr2ogr failed with exit code {result}")
             raise Exception("ogr2ogr command failed")
 
         # convert land shp to osm
@@ -103,7 +102,7 @@ def run(map_, file_out):
                "--s --m --wb " + file_out + " omitmetadata=true")
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmosis failed with exit code {result}")
+            logger.error(f"osmosis failed with exit code {result}")
             raise Exception("osmosis command failed")
 
         # remove temporary files
@@ -112,9 +111,9 @@ def run(map_, file_out):
             try:
                 os.remove(d)
             except OSError as e:
-                logging.error(f"Failed to remove file {d}: {e}")
+                logger.error(f"Failed to remove file {d}: {e}")
 
         logging.info("    %s seconds" % round((time.time() - start_time), 1))
     except Exception as e:
-        logging.error(f"Error in run/land_sea.py: {e}")
+        logger.error(f"Error in run/land_sea.py: {e}")
         raise

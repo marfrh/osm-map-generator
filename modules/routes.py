@@ -7,8 +7,7 @@ import modules.routes_resolve_superroutes as routes_resolve_superroutes
 import modules.routes_process_route_refs as routes_process_route_refs
 import modules.routes_resolve_relations as routes_resolve_relations
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Route processing should occur after tag-transform. Otherwise, network-tag
@@ -25,7 +24,7 @@ def run(file_in, map_, file_out):
     cmd = "osmconvert " + file_in + " --drop-author -o=" + temp_file_in
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     temp_file_in_filt = "tmp/temp_route_data_filt.o5m"
@@ -34,7 +33,7 @@ def run(file_in, map_, file_out):
            "-o=" + temp_file_in_filt)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     try:
@@ -53,7 +52,7 @@ def run(file_in, map_, file_out):
                "--wb " + temp_routes_sorted + " omitmetadata=true")
         result = os.system(cmd)
         if result != 0:
-            logging.error("os.system() failed for command: %s" % cmd)
+            logger.error("os.system() failed for command: %s" % cmd)
             return
 
         # check tag limit
@@ -67,10 +66,10 @@ def run(file_in, map_, file_out):
                "--drop-version -o=" + file_out)
         result = os.system(cmd)
         if result != 0:
-            logging.error("os.system() failed for command: %s" % cmd)
+            logger.error("os.system() failed for command: %s" % cmd)
             return
     except Exception as e:
-        logging.error("Error processing routes data: %s" % str(e))
+        logger.error("Error processing routes data: %s" % str(e))
         return
 
     try:

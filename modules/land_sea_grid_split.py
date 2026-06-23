@@ -2,8 +2,7 @@ import logging
 import osmium
 import os
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 # parameters to calculate the grid size for each polygon
 size_x_min = 0.034
@@ -894,7 +893,7 @@ def write_way(writer, i, n, tl):
                                        user="", tags=tl)
         writer.add_way(w)
     except Exception as e:
-        logging.error(f"Error writing way {i}: {e}")
+        logger.error(f"Error writing way {i}: {e}")
 
 
 def write_node(writer, i, loc):
@@ -905,7 +904,7 @@ def write_node(writer, i, loc):
                                         uid=1, user="", tags=[])
         writer.add_node(n)
     except Exception as e:
-        logging.error(f"Error writing node {i}: {e}")
+        logger.error(f"Error writing node {i}: {e}")
 
 
 def run(file_in, file_out):
@@ -919,4 +918,4 @@ def run(file_in, file_out):
 
         writer.close()
     except Exception as e:
-        logging.error(f"Error in run function: {e}")
+        logger.error(f"Error in run function: {e}")

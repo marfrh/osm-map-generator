@@ -51,7 +51,7 @@ def run(map_name, result_map, use_planet, keep_temp, delete_source):
 
     logging.info("\n*** Resolving admin relations")
     admin_ways = "tmp/" + map_["name"] + "_admin_ways.pbf"
-    admin_relations.run(data_filtered, map_, admin_ways)
+    admin_relations.run(data_filtered, admin_ways)
     tmp_files.add(admin_ways)
 
     logging.info("\n*** Creating and filtering polygon label nodes")

@@ -3,8 +3,7 @@ import osmium
 import os
 import time
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 # redlist of tags to remove if a way exceeds the mapsforge 15 tags limit
 redlist = ["mtb_scale_imba", "surface", "ref", "trail_visibility", "foot",
@@ -227,7 +226,7 @@ def write_empty_way(writer, w_id):
                                        user="", tags=[])
         writer.add_way(w)
     except Exception as e:
-        logging.error("Error writing empty way %d: %s" % (w_id, str(e)))
+        logger.error("Error writing empty way %d: %s" % (w_id, str(e)))
 
 
 # pass an empty relation with osm id r_id to the writer
@@ -239,7 +238,7 @@ def write_empty_relation(writer, r_id):
                                             uid=1, user="", tags=[])
         writer.add_relation(r)
     except Exception as e:
-        logging.error("Error writing empty relation %d: %s" % (r_id, str(e)))
+        logger.error("Error writing empty relation %d: %s" % (r_id, str(e)))
 
 
 def run(file_in, file_out_subtract, file_out_limit):
@@ -260,14 +259,14 @@ def run(file_in, file_out_subtract, file_out_limit):
         key_set = read_osm_tag_keys(tm1, tm2, theme1, theme2)
         key_set.remove("bBoxWeight")
     except Exception as e:
-        logging.error("Error reading osm keys: %s" % str(e))
+        logger.error("Error reading osm keys: %s" % str(e))
         return
 
     try:
         if os.path.exists(file_out_limit):
             os.remove(file_out_limit)
     except Exception as e:
-        logging.error("Error removing previous output file: %s" % str(e))
+        logger.error("Error removing previous output file: %s" % str(e))
         return
 
     try:
@@ -276,7 +275,7 @@ def run(file_in, file_out_subtract, file_out_limit):
         cd.apply_file(file_in)
         writer_limit.close()
     except Exception as e:
-        logging.error("Error processing reduce data: %s" % str(e))
+        logger.error("Error processing reduce data: %s" % str(e))
         return
 
     # Exit here if file_out_subtract is not needed. Don't print elapsed
@@ -303,7 +302,7 @@ def run(file_in, file_out_subtract, file_out_limit):
         if os.path.exists(temp_file_subtract):
             os.remove(temp_file_subtract)
     except Exception as e:
-        logging.error("Error removing previous output file: %s" % str(e))
+        logger.error("Error removing previous output file: %s" % str(e))
         return
 
     try:
@@ -322,7 +321,7 @@ def run(file_in, file_out_subtract, file_out_limit):
 
         writer.close()
     except Exception as e:
-        logging.error("Error during deletion of ways and relations: %s" % str(e))
+        logger.error("Error during deletion of ways and relations: %s" % str(e))
         return
 
     # temp file is not sorted yet --> sort
@@ -330,7 +329,7 @@ def run(file_in, file_out_subtract, file_out_limit):
     cmd += file_out_subtract
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     try:

@@ -1,12 +1,11 @@
+import logging
 import os
 import osmium
 import time
 
 import modules.functions as functions
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 def write_way(writer, i, n, tl):
@@ -18,7 +17,7 @@ def write_way(writer, i, n, tl):
         writer.add_way(w)
         return i + 1
     except Exception as e:
-        logging.error(f"Error in write_way: {e}")
+        logger.error(f"Error in write_way: {e}")
         raise
 
 
@@ -31,7 +30,7 @@ def write_node(writer, i, loc, tl={}):
         writer.add_node(n)
         return i + 1
     except Exception as e:
-        logging.error(f"Error in write_node: {e}")
+        logger.error(f"Error in write_node: {e}")
         raise
 
 
@@ -85,6 +84,6 @@ def run(map_, file_out):
     try:
         create_map_border(map_, file_out)
     except Exception as e:
-        logging.error(f"Error in create_map_border: {e}")
+        logger.error(f"Error in create_map_border: {e}")
     finally:
         logging.info(f"    {round((time.time() - start_time), 1)} seconds")

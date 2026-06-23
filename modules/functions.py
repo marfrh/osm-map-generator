@@ -1,11 +1,10 @@
+import logging
 import os
 import subprocess
 import time
 import zipfile
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Determine a conservative number of threads to run in parallel
@@ -33,7 +32,7 @@ def poly_to_lon_lat(poly_path):
                     lat.append(data[1])
             return lon, lat
     except Exception as e:
-        logging.error(f"Error reading polygon file {poly_path}: {e}")
+        logger.error(f"Error reading polygon file {poly_path}: {e}")
         raise
 
 
@@ -44,7 +43,7 @@ def min_max_lat_lon(poly_path):
         lon, lat = poly_to_lon_lat(poly_path)
         return min(lat), min(lon), max(lat), max(lon)
     except Exception as e:
-        logging.error(f"Error calculating min/max lat/lon for {poly_path}: {e}")
+        logger.error(f"Error calculating min/max lat/lon for {poly_path}: {e}")
         raise
 
 
@@ -53,10 +52,10 @@ def wget(source, target):
         cmd = ["wget", "-q", "--show-progress", source, "-O", target]
         subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
     except subprocess.CalledProcessError as e:
-        logging.error(f"wget failed for {source}: {e}")
+        logger.error(f"wget failed for {source}: {e}")
         raise
     except Exception as e:
-        logging.error(f"Unexpected error during wget for {source}: {e}")
+        logger.error(f"Unexpected error during wget for {source}: {e}")
         raise
 
 
@@ -80,7 +79,7 @@ def download_osm_source(map_, use_planet):
         wget(src, file_out)
         return file_out
     except Exception as e:
-        logging.error(f"Error in download_osm_source: {e}")
+        logger.error(f"Error in download_osm_source: {e}")
         raise
 
 
@@ -91,7 +90,7 @@ def download_auxiliary_sources():
         try:
             os.makedirs(themes_path)
         except OSError as e:
-            logging.error(f"Failed to create directory {themes_path}: {e}")
+            logger.error(f"Failed to create directory {themes_path}: {e}")
             raise
 
     elevate = ("https://ftp.gwdg.de/pub/misc/openstreetmap/openandromaps/"
@@ -107,7 +106,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Map theme already exists.")
     except Exception as e:
-        logging.error(f"Error downloading/extracting Elevate theme: {e}")
+        logger.error(f"Error downloading/extracting Elevate theme: {e}")
         raise
 
     tt_tm_path = "tt_tm"
@@ -115,7 +114,7 @@ def download_auxiliary_sources():
         try:
             os.makedirs(tt_tm_path)
         except OSError as e:
-            logging.error(f"Failed to create directory {tt_tm_path}: {e}")
+            logger.error(f"Failed to create directory {tt_tm_path}: {e}")
             raise
 
     tt = ("https://www.openandromaps.org/wp-content/snippets/makes/"
@@ -127,7 +126,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Tag-transform file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading tag-transform file: {e}")
+        logger.error(f"Error downloading tag-transform file: {e}")
         raise
 
     tm_min = ("https://www.openandromaps.org/wp-content/snippets/makes/"
@@ -139,7 +138,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Tag-mapping-min file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading tag-mapping-min file: {e}")
+        logger.error(f"Error downloading tag-mapping-min file: {e}")
         raise
 
     tm_urban = ("https://www.openandromaps.org/wp-content/snippets/makes/"
@@ -151,7 +150,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Tag-mapping-urban file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading tag-mapping-urban file: {e}")
+        logger.error(f"Error downloading tag-mapping-urban file: {e}")
         raise
 
     pps_path = "popcat_peaks_saddles"
@@ -159,7 +158,7 @@ def download_auxiliary_sources():
         try:
             os.makedirs(pps_path)
         except OSError as e:
-            logging.error(f"Failed to create directory {pps_path}: {e}")
+            logger.error(f"Failed to create directory {pps_path}: {e}")
             raise
 
     ti = ("https://geo.dianacht.de/topo/"
@@ -171,7 +170,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Topographic isolation file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading topographic isolation file: {e}")
+        logger.error(f"Error downloading topographic isolation file: {e}")
         raise
 
     sd = ("https://geo.dianacht.de/topo/"
@@ -183,7 +182,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Saddle direction file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading saddle direction file: {e}")
+        logger.error(f"Error downloading saddle direction file: {e}")
         raise
 
     popcat = ("https://ftp.gwdg.de/pub/misc/openstreetmap/openandromaps/world/"
@@ -195,7 +194,7 @@ def download_auxiliary_sources():
         else:
             logging.info("    Popcat file already exists.")
     except Exception as e:
-        logging.error(f"Error downloading Popcat file: {e}")
+        logger.error(f"Error downloading Popcat file: {e}")
         raise
 
 
@@ -226,12 +225,12 @@ def extract_target_area(file_in, map_, file_out):
         
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmconvert failed with exit code {result}")
+            logger.error(f"osmconvert failed with exit code {result}")
             raise Exception("osmconvert command failed")
 
         logging.info("    %s seconds" % round((time.time() - start_time), 1))
     except Exception as e:
-        logging.error(f"Error in extract_target_area: {e}")
+        logger.error(f"Error in extract_target_area: {e}")
         raise
 
 
@@ -250,12 +249,12 @@ def filter_data(file_in, map_, file_out):
         
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmfilter/osmconvert failed with exit code {result}")
+            logger.error(f"osmfilter/osmconvert failed with exit code {result}")
             raise Exception("osmfilter command failed")
 
         logging.info("    %s seconds" % round((time.time() - start_time), 1))
     except Exception as e:
-        logging.error(f"Error in filter_data: {e}")
+        logger.error(f"Error in filter_data: {e}")
         raise
 
 
@@ -282,13 +281,13 @@ def merge_map_and_tt(file_list, file_out, silent):
         
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmosis failed with exit code {result}")
+            logger.error(f"osmosis failed with exit code {result}")
             raise Exception("osmosis command failed")
 
         if not silent:
             logging.info("    %s seconds" % round((time.time() - start_time), 1))
     except Exception as e:
-        logging.error(f"Error in merge_map_and_tt: {e}")
+        logger.error(f"Error in merge_map_and_tt: {e}")
         raise
 
 
@@ -310,12 +309,12 @@ def merge_map_osmconvert(file_list, file_subtract, file_out):
         
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmconvert failed with exit code {result}")
+            logger.error(f"osmconvert failed with exit code {result}")
             raise Exception("osmconvert command failed")
         
         logging.info("    %s seconds" % round((time.time() - start_time), 1))
     except Exception as e:
-        logging.error(f"Error in merge_map_osmconvert: {e}")
+        logger.error(f"Error in merge_map_osmconvert: {e}")
         raise
 
 
@@ -324,7 +323,7 @@ def start_mapwriter(file_in, map_, file_out):
         bbox = min_max_lat_lon("polygons/" + map_["name"] + ".poly")
 
         if os.path.getsize(file_in) == 0:
-            logging.error("Error: Invalid input file %s. Check previous steps for errors."
+            logger.error("Error: Invalid input file %s. Check previous steps for errors."
                           % file_in)
             return
 
@@ -344,10 +343,10 @@ def start_mapwriter(file_in, map_, file_out):
         
         result = os.system(cmd)
         if result != 0:
-            logging.error(f"osmosis mapwriter failed with exit code {result}")
+            logger.error(f"osmosis mapwriter failed with exit code {result}")
             raise Exception("osmosis mapwriter command failed")
     except Exception as e:
-        logging.error(f"Error in start_mapwriter: {e}")
+        logger.error(f"Error in start_mapwriter: {e}")
         raise
 
 
@@ -357,4 +356,4 @@ def remove_files(delete_set):
             if os.path.exists(d):
                 os.remove(d)
         except OSError as e:
-            logging.error(f"Failed to remove file {d}: {e}")
+            logger.error(f"Failed to remove file {d}: {e}")

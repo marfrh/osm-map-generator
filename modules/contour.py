@@ -1,13 +1,12 @@
 import glob
+import logging
 import os
 import sys
 import time
-import logging
 
 import modules.functions as functions
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Adapt coordinates to hgt grid. Example:
@@ -119,7 +118,7 @@ def run(map_, file_out):
         # necessary to cover the map polygon's bounding box.
         hgt_tile_set = get_hgt_tile_set(polygon, custom_dir)
         if not hgt_tile_set:
-            logging.error("Error: custom hgt tiles are missing.")
+            logger.error("Error: custom hgt tiles are missing.")
             sys.exit()
 
         cmd += "--polygon=" + polygon + " "
@@ -159,7 +158,7 @@ def run(map_, file_out):
 
     result = os.system(cmd)
     if result != 0:
-        logging.error("pyhgtmap failed with exit code %s" % result)
+        logger.error("pyhgtmap failed with exit code %s" % result)
         sys.exit()
 
     # rename for handling with osmconvert (has problems with wildcard * when
@@ -172,6 +171,6 @@ def run(map_, file_out):
         if os.path.exists(temp_poly):
             os.remove(temp_poly)
     except OSError as e:
-        logging.error(f"Failed to remove file {temp_poly}: {e}")
+        logger.error(f"Failed to remove file {temp_poly}: {e}")
 
     logging.info("    %s seconds" % round((time.time() - start_time), 1))

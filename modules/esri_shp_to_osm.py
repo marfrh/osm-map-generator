@@ -1,14 +1,13 @@
+import logging
 import os
 from osgeo import ogr, gdal
 import osmium
-import logging
 
 start_rel_id = -10000000000
 start_way_id = -10000000000
 start_node_id = -10000000000
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 def write_relation(writer, i, outer_ways, inner_ways, tl):
@@ -30,7 +29,7 @@ def write_relation(writer, i, outer_ways, inner_ways, tl):
         writer.add_relation(r)
         return i + 1
     except Exception as e:
-        logging.error(f"Error in write_relation: {e}")
+        logger.error(f"Error in write_relation: {e}")
         raise
 
 
@@ -43,7 +42,7 @@ def write_way(writer, i, n, tl):
         writer.add_way(w)
         return i + 1
     except Exception as e:
-        logging.error(f"Error in write_way: {e}")
+        logger.error(f"Error in write_way: {e}")
         raise
 
 
@@ -56,7 +55,7 @@ def write_node(writer, i, loc, tl={}):
         writer.add_node(n)
         return i + 1
     except Exception as e:
-        logging.error(f"Error in write_node: {e}")
+        logger.error(f"Error in write_node: {e}")
         raise
 
 
@@ -130,7 +129,7 @@ def __shp_to_osm(writer, file_in, i_r, i_w, i_n, tl):
     ogr.DontUseExceptions()
     ds = ogr.Open(file_in)
     if ds is None:
-        logging.error(f"Failed to open shapefile: {file_in}")
+        logger.error(f"Failed to open shapefile: {file_in}")
         raise Exception("Could not open input file")
 
     layer = ds.GetLayer()
@@ -198,7 +197,7 @@ def run(file_in, file_out, tag_list={}):
         if os.path.exists(file_out):
             os.remove(file_out)
     except Exception as e:
-        logging.error(f"Error removing existing output file: {e}")
+        logger.error(f"Error removing existing output file: {e}")
         raise
 
     writer = osmium.SimpleWriter(file_out)
@@ -210,5 +209,5 @@ def run(file_in, file_out, tag_list={}):
     try:
         i_w, i_n, i_r = shp_to_osm(writer, file_in, i_r, i_w, i_n, tag_list)
     except Exception as e:
-        logging.error(f"Error in run/shp_to_osm: {e}")
+        logger.error(f"Error in run/shp_to_osm: {e}")
         raise

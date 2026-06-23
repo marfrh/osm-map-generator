@@ -5,8 +5,7 @@ import time
 
 import modules.reduce_data as reduce_data
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 tag_set = {"route", "piste:type", "piste:grooming", "piste:oneway",
            "piste:difficulty", "piste:ref", "piste:name"}
@@ -111,7 +110,7 @@ def run(file_in, map_, file_out):
         if os.path.exists(temp_file):
             os.remove(temp_file)
     except Exception as e:
-        logging.error("Error removing previous output file: %s" % str(e))
+        logger.error("Error removing previous output file: %s" % str(e))
         return
 
     try:
@@ -120,14 +119,14 @@ def run(file_in, map_, file_out):
         ppw.apply_file(file_in)
         writer.close()
     except Exception as e:
-        logging.error("Error processing pistes data: %s" % str(e))
+        logger.error("Error processing pistes data: %s" % str(e))
         return
 
     temp_file_sorted = "tmp/temp_pistes_sorted.pbf"
     cmd = "osmosis -q --rbf " + temp_file + " --s --wb " + temp_file_sorted
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # check tag limit
@@ -141,7 +140,7 @@ def run(file_in, map_, file_out):
            "--drop-version -o=" + file_out)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     try:

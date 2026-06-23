@@ -4,8 +4,7 @@ import osmium
 import os
 import time
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Attach pead dominance tag from peak_data to all peaks/vocanos and attach
@@ -85,7 +84,7 @@ def run(file_in, map_, file_out):
            "-o=" + tmp_file)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     ti = "popcat_peaks_saddles/topographic_isolation_viefinderpanoramas.txt"
@@ -99,7 +98,7 @@ def run(file_in, map_, file_out):
         peak_data = list(zip(*reader))
         f.close()
     except Exception as e:
-        logging.error("Error reading peaks file %s: %s" % (ti, str(e)))
+        logger.error("Error reading peaks file %s: %s" % (ti, str(e)))
         return
 
     try:
@@ -109,14 +108,14 @@ def run(file_in, map_, file_out):
         saddle_data = list(zip(*reader))
         f.close()
     except Exception as e:
-        logging.error("Error reading saddles file %s: %s" % (sd, str(e)))
+        logger.error("Error reading saddles file %s: %s" % (sd, str(e)))
         return
 
     try:
         if os.path.exists(file_out):
             os.remove(file_out)
     except Exception as e:
-        logging.error("Error removing previous output file: %s" % str(e))
+        logger.error("Error removing previous output file: %s" % str(e))
         return
 
     try:
@@ -125,7 +124,7 @@ def run(file_in, map_, file_out):
         peak_saddle_parser.apply_file(tmp_file)
         writer.close()
     except Exception as e:
-        logging.error("Error processing OSM data: %s" % str(e))
+        logger.error("Error processing OSM data: %s" % str(e))
         return
 
     try:

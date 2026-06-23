@@ -1,6 +1,9 @@
+import logging
+import math
 import os
 import osmium
-import math
+
+logger = logging.getLogger(__name__)
 
 # if set to True, ways for mtb and cycle routes are copys of the
 # original way with net id.
@@ -553,7 +556,7 @@ class process_osmc_nodes(osmium.SimpleHandler):
             # intersection of ways.) In this unlikely case only the first
             # symbol is created, so issue a warning here.
             if len(self.osmc_nodes_hk[n.id]) > 1:
-                logging.info("    Warning, at least one duplicate osmc-symbol "
+                logger.info("    Warning, at least one duplicate osmc-symbol "
                              "ignored: %d" % n.id)
 
             # prepare tag list and add osmc tags

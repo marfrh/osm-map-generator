@@ -4,8 +4,7 @@ import osmium
 import os
 import time
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Create popcat tag for nodes by using population tag or data from popcat_data.
@@ -105,7 +104,7 @@ def run(file_in, map_, file_out):
            "-o=" + tmp_file)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # read popcat data an transpose and convert to list
@@ -116,14 +115,14 @@ def run(file_in, map_, file_out):
         popcat_data = list(zip(*reader))
         f.close()
     except Exception as e:
-        logging.error("Error reading popcat data file %s: %s" % (file_popcat, str(e)))
+        logger.error("Error reading popcat data file %s: %s" % (file_popcat, str(e)))
         return
 
     try:
         if os.path.exists(file_out):
             os.remove(file_out)
     except Exception as e:
-        logging.error("Error removing previous output file: %s" % str(e))
+        logger.error("Error removing previous output file: %s" % str(e))
         return
 
     try:
@@ -133,7 +132,7 @@ def run(file_in, map_, file_out):
         os.remove(tmp_file)
         writer.close()
     except Exception as e:
-        logging.error("Error processing places data: %s" % str(e))
+        logger.error("Error processing places data: %s" % str(e))
         return
 
     logging.info("    %s seconds" % round((time.time() - start_time), 1))

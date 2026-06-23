@@ -1,10 +1,9 @@
+import logging
 import os
 import osmium
 import time
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Collect data for all admin relations with admin_level 1-4. other admin_level
@@ -68,7 +67,7 @@ class process_ways(osmium.SimpleHandler):
             self.way_id += 1
 
 
-def run(file_in, map_, file_out):
+def run(file_in, file_out):
     start_time = time.time()
 
     if os.path.exists(file_out):
@@ -81,33 +80,33 @@ def run(file_in, map_, file_out):
     try:
         carw.apply_file(file_in)
     except Exception as e:
-        logging.error(f"Error reading file {file_in}: {e}")
+        logger.error(f"Error reading file {file_in}: {e}")
         return
 
     if os.path.exists(temp_file):
         try:
             os.remove(temp_file)
         except OSError as e:
-            logging.error(f"Failed to remove file {temp_file}: {e}")
+            logger.error(f"Failed to remove file {temp_file}: {e}")
 
     try:
         with osmium.SimpleWriter(temp_file) as way_writer:
             pw = process_ways(carw.all_ways, way_writer)
             pw.apply_file(file_in)
     except Exception as e:
-        logging.error(f"Error processing ways: {e}")
+        logger.error(f"Error processing ways: {e}")
         return
 
     # sort output file
     cmd = f"osmosis -q --rbf {temp_file} --s --wb {file_out} omitmetadata=true"
     result = os.system(cmd)
     if result != 0:
-        logging.error(f"osmosis failed with exit code {result}")
+        logger.error(f"osmosis failed with exit code {result}")
         return
 
     try:
         os.remove(temp_file)
     except OSError as e:
-        logging.error(f"Failed to remove file {temp_file}: {e}")
+        logger.error(f"Failed to remove file {temp_file}: {e}")
 
     logging.info(f"    {round((time.time() - start_time), 1)} seconds")

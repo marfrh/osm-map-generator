@@ -4,8 +4,7 @@ import time
 
 import modules.functions as functions
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # Create a single node for certain polygon categories and add a bboxweight
@@ -24,7 +23,7 @@ def run(file_in, map_, file_out):
            "-o=" + temp_poly_data)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Apply tag-transform for name abbreviations and unifications
@@ -38,7 +37,7 @@ def run(file_in, map_, file_out):
            "-o=" + temp_bboxweight)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Convert to nodes
@@ -54,7 +53,7 @@ def run(file_in, map_, file_out):
            "-o=" + poly_nodes)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Filter building relations
@@ -65,7 +64,7 @@ def run(file_in, map_, file_out):
            "-o=" + temp_building_relations)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Convert building-multipolygon-relationens (with house number) to a node
@@ -80,7 +79,7 @@ def run(file_in, map_, file_out):
            "-o=" + temp_building_nodes)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Only keep nodes
@@ -91,7 +90,7 @@ def run(file_in, map_, file_out):
            "-o=" + building_nodes_filt)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     # Merge node categories
@@ -100,7 +99,7 @@ def run(file_in, map_, file_out):
            "--drop-version -o=" + file_out)
     result = os.system(cmd)
     if result != 0:
-        logging.error("os.system() failed for command: %s" % cmd)
+        logger.error("os.system() failed for command: %s" % cmd)
         return
 
     try:

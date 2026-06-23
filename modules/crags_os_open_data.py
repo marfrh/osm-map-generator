@@ -1,19 +1,19 @@
+import logging
 import os
 from osgeo import ogr
 import osmium
+import sys
 import time
 import zipfile
 
 import modules.esri_shp_to_osm as shp_to_osm
 import modules.functions as functions
-import logging
 
 start_rel_id = -80000000000
 start_way_id = -80000000000
 start_node_id = -80000000000
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 
 # convert EPSG_27700 file to WGS_84 via ogr2ogr
@@ -34,7 +34,7 @@ def EPSG_27700_to_WGS_84(file_in, file_out):
     try:
         os.system(cmd)
     except Exception as e:
-        logging.error("Error executing command: %s" % e)
+        logger.error("Error executing command: %s" % e)
         sys.exit()
 
 # check if two ranges overlap each other
@@ -84,7 +84,7 @@ def convert_WGS84_shp_to_osm(file_set, file_out):
         try:
             i_w, i_n, i_r = shp_to_osm.shp_to_osm(writer, f, i_r, i_w, i_n, tl)
         except Exception as e:
-            logging.error("Error processing file %s: %s" % (f, e))
+            logger.error("Error processing file %s: %s" % (f, e))
             sys.exit()
 
     writer.close()
@@ -102,7 +102,7 @@ def download_and_convert_source_data(folder):
             try:
                 functions.wget(src, target)
             except Exception as e:
-                logging.error("Error downloading source data: %s" % e)
+                logger.error("Error downloading source data: %s" % e)
                 sys.exit()
 
         # extract data
@@ -133,7 +133,7 @@ def download_and_convert_source_data(folder):
                     try:
                         EPSG_27700_to_WGS_84(file_temp, f_WGS84)
                     except Exception as e:
-                        logging.error("Error converting file %s to WGS84: %s" % (file_temp, e))
+                        logger.error("Error converting file %s to WGS84: %s" % (file_temp, e))
                         sys.exit()
                 file_set_WGS84.add(f_WGS84)
 
@@ -157,7 +157,7 @@ def run(folder, map_, file_out):
         try:
             os.makedirs(folder)
         except Exception as e:
-            logging.error("Error creating directory %s: %s" % (folder, e))
+            logger.error("Error creating directory %s: %s" % (folder, e))
             sys.exit()
 
     file_set, file_set_WGS84 = download_and_convert_source_data(folder)
@@ -170,7 +170,7 @@ def run(folder, map_, file_out):
                 try:
                     os.remove(f_temp)
                 except Exception as e:
-                    logging.error("Error removing file %s: %s" % (f_temp, e))
+                    logger.error("Error removing file %s: %s" % (f_temp, e))
                     sys.exit()
 
     # Get set of shp files that are relevant for the area of interest.
@@ -197,7 +197,7 @@ def run(folder, map_, file_out):
     try:
         os.system(cmd)
     except Exception as e:
-        logging.error("Error executing command: %s" % e)
+        logger.error("Error executing command: %s" % e)
         sys.exit()
 
     os.remove(temp_crag_data)
